@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026년도 강북 스마트팜 애플수박 종료 보고서</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green-50: #EAF3DE; --green-100: #C0DD97; --green-200: #97C459; --green-400: #639922; --green-600: #3B6D11; --green-800: #27500A; --green-900: #173404;
+    --teal-50: #E1F5EE; --teal-200: #5DCAA5; --teal-600: #0F6E56;
+    --amber-50: #FAEEDA; --amber-200: #EF9F27; --amber-600: #854F0B; --amber-800: #633806;
+    --red-50: #FCEBEB; --red-200: #F09595; --red-600: #A32D2D; --red-800: #791F1F;
+    --blue-50: #E6F1FB; --blue-400: #378ADD; --blue-600: #185FA5; --blue-800: #0C447C;
+    --gray-50: #F5F4EF; --gray-100: #E8E7E0; --gray-200: #D3D1C7; --gray-400: #888780; --gray-600: #5F5E5A; --gray-800: #2C2C2A;
+    --ink: #1a1a18; --bg: #FAFAF7; --surface: #FFFFFF;
+  }
+
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--ink); padding: 20px; line-height: 1.5; }
+  .page { max-width: 850px; margin: 0 auto; }
+
+  /* === HEADER === */
+  .report-header { margin-bottom: 20px; position: relative; }
+  .report-header::before { content: ''; position: absolute; top: -15px; left: -15px; right: -15px; height: 4px; background: linear-gradient(90deg, var(--green-400), var(--teal-200), var(--green-100)); border-radius: 4px; }
+  .report-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: var(--green-400); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .report-eyebrow::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+  .report-title { font-family: 'DM Serif Display', serif; font-size: 28px; font-weight: 700; color: var(--green-900); margin-bottom: 6px; }
+  .report-subtitle { font-size: 13px; color: var(--gray-600); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gray-400); }
+
+  /* === SECTION === */
+  .section { margin-bottom: 24px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--gray-400); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--gray-100); }
+
+  /* === META CARDS === */
+  .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .meta-card { background: var(--surface); border: 1px solid var(--gray-100); border-radius: 8px; padding: 12px; }
+  .meta-key { font-size: 11px; color: var(--gray-400); margin-bottom: 4px; }
+  .meta-val { font-size: 13px; font-weight: 600; color: var(--ink); }
+
+  /* === KPI & CHART CONTAINER === */
+  .kpi-chart-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--gray-100); border-radius: 8px; padding: 14px; }
+  .kpi-card.full { grid-column: span 2; }
+  .kpi-label { font-size: 11px; color: var(--gray-400); font-weight: 500; margin-bottom: 4px; }
+  .kpi-num { font-size: 23px; font-weight: 700; color: var(--green-800); margin-bottom: 4px; }
+  .kpi-unit { font-size: 12px; font-weight: 400; color: var(--gray-400); }
+  .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 12px; }
+  .badge-up { background: var(--green-50); color: var(--green-600); }
+  .badge-down { background: var(--red-50); color: var(--red-600); }
+
+  .chart-container { background: var(--surface); border: 1px solid var(--gray-100); border-radius: 8px; padding: 14px; }
+  .chart-top { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 11px; color: var(--gray-600); }
+  .chart-wrap { position: relative; width: 100%; height: 110px; }
+
+  /* === HARVEST & USAGE === */
+  .harvest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .harvest-card { border-radius: 8px; padding: 12px; border: 1px solid transparent; }
+  .harvest-good { background: var(--green-50); border-color: var(--green-100); }
+  .harvest-bad { background: var(--red-50); border-color: var(--red-200); }
+  .harvest-label { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .harvest-good .harvest-label { color: var(--green-600); }
+  .harvest-bad .harvest-label { color: var(--red-600); }
+  .harvest-pct { font-size: 24px; font-weight: 700; margin-bottom: 2px; }
+  .harvest-good .harvest-pct { color: var(--green-800); }
+  .harvest-bad .harvest-pct { color: var(--red-800); }
+  .harvest-desc { font-size: 11px; color: var(--gray-600); }
+
+  .box-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .reason-box, .usage-box { border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.6; }
+  .reason-box { background: var(--amber-50); border: 1px solid #FAC775; color: var(--amber-800); }
+  .usage-box { background: var(--blue-50); border: 1px solid #B5D4F4; color: var(--blue-800); }
+  .box-title { font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+
+  /* === REVIEW & STRATEGY (2 Columns) === */
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  
+  .review-card, .strategy-card { border-radius: 8px; padding: 14px; border: 1px solid transparent; margin-bottom: 10px; }
+  .review-card.weakness { background: var(--gray-50); border-color: var(--gray-200); }
+  .review-card.strength { background: var(--teal-50); border-color: #9FE1CB; }
+  .review-title, .strategy-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .weakness .review-title { color: var(--gray-800); }
+  .strength .review-title { color: var(--teal-600); }
+  .review-body { font-size: 12px; color: var(--gray-800); }
+
+  .strategy-card { background: #fff; border-color: var(--blue-200); position: relative; overflow: hidden; }
+  .strategy-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--blue-400); }
+  .strategy-title { color: var(--blue-800); }
+  .strategy-desc { font-size: 12px; color: var(--gray-600); }
+
+  .report-footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--gray-100); display: flex; justify-content: space-between; font-size: 10px; color: var(--gray-400); }
+
+  @media (max-width: 700px) {
+    .meta-grid { grid-template-columns: 1fr 1fr; }
+    .kpi-chart-wrap, .box-wrap, .bottom-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="report-header">
+    <div class="report-eyebrow">🍉 강북 스마트팜 재배단지 애플수박 종료 보고서</div>
+    <h1 class="report-title">2026년 애플수박 최종 결과 보고서</h1>
+    <p class="report-subtitle">
+      <span>작성: 박기남 매니저</span><span class="dot"></span>
+      <span>아다미, 스위트키즈 (745주)</span><span class="dot"></span>
+      <span>2026.05.20 ~ 2026.08.03</span>
+    </p>
+  </header>
+
+  <!-- 1. 개요 -->
+  <div class="section">
+    <div class="meta-grid">
+      <div class="meta-card"><div class="meta-key">납품 품종</div><div class="meta-val">아다미, 스위트키즈</div></div>
+      <div class="meta-card"><div class="meta-key">식재 주수</div><div class="meta-val">745주</div></div>
+      <div class="meta-card"><div class="meta-key">재배 환경</div><div class="meta-val">코코피트 고설 (2~3줄기 유인)</div></div>
+      <div class="meta-card"><div class="meta-key">재배 기간</div><div class="meta-val">75일 (5.20 ~ 8.03)</div></div>
+    </div>
+  </div>
+
+  <!-- 2. 수확 데이터 -->
+  <div class="section">
+    <div class="section-label">수확 실적 및 비교</div>
+    <div class="kpi-chart-wrap">
+      <div class="kpi-grid">
+        <div class="kpi-card full">
+          <div class="kpi-label">정상 수확량 (소과 포함)</div>
+          <div class="kpi-num">584 <span class="kpi-unit">개</span> </div>
+          <div class="kpi-unit">전년도: 431개</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">모종 1개당 비율</div>
+          <div class="kpi-num">0.78<span class="kpi-unit">개</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">총 손실량</div>
+          <div class="kpi-num" style="color:var(--red-600);">218<span class="kpi-unit">개</span></div>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div class="chart-top">
+          <b>전년 대비 비교</b>
+          <span><span style="color:#639922;">■</span> 올해 <span style="color:#888;">■</span> 작년</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="compareChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 상세 & 활용 -->
+  <div class="section">
+    <div class="section-label">수확 상세 및 활용 내역 (총 802개 착과)</div>
+    <div class="harvest-grid">
+      <div class="harvest-card harvest-good">
+        <div class="harvest-label">✅ 정상 수확</div>
+        <div class="harvest-pct">72.8% <span style="font-size: 13px; font-weight: 500; color: var(--green-400); margin-left: 4px;">(작년 62.8%)</span></div>
+        <div class="harvest-desc">584개 (정상과 466 + 소과 118)</div>
+      </div>
+      <div class="harvest-card harvest-bad">
+        <div class="harvest-label">⚠️ 손실 (열과·낙과·부주의 등)</div>
+        <div class="harvest-pct">27.2% <span style="font-size: 13px; font-weight: 500; color: var(--red-600); margin-left: 4px;">(작년 37.2%)</span></div>
+        <div class="harvest-desc">218개 (부주의, 과경부패, 미숙과 통합)</div>
+      </div>
+    </div>
+    
+    <div class="box-wrap">
+      <div class="usage-box">
+        <div class="box-title">🛒 수확 과실 주요 활용 내역</div>
+        • <b>스마트팜센터:</b> 267개 - 일반인 판매용<br>
+        • <b>체험프로그램:</b> 285개 - 일반인 체험프로그램 (총 5일 10회)<br>
+        • <b>기타:</b> 32개 - 유관기관(서울사이버대,강북구청)배부 및 홍보용
+      </div>
+      <div class="reason-box">
+        <div class="box-title">⚠️ 손실(27.2%) 발생 원인</div>
+        • <b>일정 대기:</b> 체험 일정으로 온실에 방치로 과숙과 온열로 160여개 열과발생<br>
+        • <b>폭염 스트레스:</b> 장마 직후 폭염으로 열과(터짐) 및 낙과, 작업자 부주의 발생.
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 & 5. 리뷰 및 전략 -->
+  <div class="section">
+    <div class="bottom-grid">
+      <div>
+        <div class="section-label">이번 작기의 명과 암</div>
+        <div class="review-card weakness">
+          <div class="review-title">🔥 모종 변경 & 일정 지연</div>
+          <div class="review-body">처음에 요청했던 모종과는 전혀 다른 모종이 입고 되어 관리에 어려움과 차질이 있었습니다. 또한 체험프로그램 행사 일정에 맞추다 발생한 160여 개의 열과·낙과 손실은 가장 큰 손실 부분입니다.</div>
+        </div>
+        <div class="review-card strength">
+          <div class="review-title">💡 '아들줄기 유인'의 진짜 의미</div>
+          <div class="review-body">2~3개를 따기 위함이 아니라, 초세를 제어하고 한 줄기 실패를 대비한 <b>'보험'</b>임을 알았으며, 모종 1개당 수박 1개가 건강한 생리적 한계치라는 데이터를 얻었습니다.</div>
+        </div>
+      </div>
+      <div>
+        <div class="section-label">내년도 건의 및 개선 사항</div>
+        <div class="strategy-card">
+          <div class="strategy-title">1. 행사는 '수박이 익는 날'에 정확하게 맞춰 유연하게</div>
+          <div class="strategy-desc">실무자가 현장에서 착과시기와 수확 적기를 판단하면 <b>체험 등 일정을 비대기 35일을 기준으로 앞뒤 2주일내로</b> 조율할 필요성이 있습니다.</div>
+        </div>
+        <div class="strategy-card">
+          <div class="strategy-title">2. 현실적 목표</div>
+          <div class="strategy-desc"><b>모종 1개당 1과(식재 주수의 80~90%)</b>를 현실적 목표로 기획할 필요가 있습니다..</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="report-footer">
+    <span>🍉 강북 스마트팜 재배단지 애플수박 종료 보고서</span>
+    <span>작성: 박기남 매니저 / 2026.08.03</span>
+  </footer>
+
+</div>
+
+<script>
+  new Chart(document.getElementById('compareChart'), {
+    type: 'bar',
+    data: {
+      labels: ['심은 주수', '정상 수확량'],
+      datasets: [
+        { label: '올해 (26년)', data: [745, 584], backgroundColor: '#639922', borderRadius: 4 },
+        { label: '작년 (25년)', data: [560, 431], backgroundColor: '#D3D1C7', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 11 }, color: '#888' }, grid: { display: false }, border: { display: false } },
+        y: { ticks: { font: { size: 10 }, color: '#B4B2A9' }, grid: { color: 'rgba(0,0,0,0.05)' }, border: { display: false } }
+      }
+    }
+  });
+</script>
+</body>
+</html>
