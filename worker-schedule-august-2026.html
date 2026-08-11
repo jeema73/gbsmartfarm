@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>강북구 스마트팜 재배단지 공공근로 출근표</title>
+  <style>
+    :root{
+      --bg:#f8f7ff;
+      --card:#ffffff;
+      --line:#dcd9f3;
+      --head:#e9eefc;
+      --sun:#ffd9e6;
+      --sat:#dbeafe;
+      --accent:#c7d2fe;
+      --text:#3f3d56;
+      --muted:#7a7791;
+      --blank:#f6f5fb;
+      --work:#eef8f2;
+      --holiday:#fff1f1;
+      --shadow:0 10px 30px rgba(92, 98, 153, 0.12);
+    }
+
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      background:linear-gradient(180deg, #f6f7ff 0%, #f9fbff 100%);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;
+      color:var(--text);
+    }
+
+    .wrap{
+      width:min(100%, 760px);
+      margin:0 auto;
+      padding:16px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid rgba(220,217,243,.9);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .header{
+      padding:18px 18px 14px;
+      background:linear-gradient(135deg, #eef2ff 0%, #fdf2f8 100%);
+      border-bottom:1px solid var(--line);
+    }
+
+    .title{
+      margin:0;
+      font-size:clamp(18px, 4.5vw, 24px);
+      font-weight:800;
+      letter-spacing:-0.03em;
+      line-height:1.35;
+    }
+
+    .subtitle{
+      margin:6px 0 0;
+      font-size:clamp(12px, 3vw, 14px);
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    .meta{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    .pill{
+      padding:7px 10px;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid var(--line);
+      font-size:12px;
+      font-weight:600;
+    }
+
+    .table-wrap{
+      width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      background:#fff;
+    }
+
+    table{
+      width:100%;
+      min-width:720px;
+      border-collapse:separate;
+      border-spacing:0;
+      table-layout:fixed;
+    }
+
+    thead th{
+      background:var(--head);
+      color:#4b4a67;
+      font-size:13px;
+      padding:11px 6px;
+      border-bottom:1px solid var(--line);
+      text-align:center;
+      font-weight:800;
+    }
+
+    th, td{
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      vertical-align:top;
+      padding:8px;
+    }
+
+    tr > *:first-child{
+      border-left:1px solid var(--line);
+    }
+
+    tbody td{
+      height:96px;
+      background:#fff;
+    }
+
+    .date{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:6px;
+      font-size:13px;
+      font-weight:800;
+      margin-bottom:8px;
+    }
+
+    .sun .date, .sun .dayname{color:#d46a88;}
+    .sat .date, .sat .dayname{color:#4f7dbd;}
+
+    .dayname{
+      font-size:11px;
+      font-weight:700;
+      color:var(--muted);
+    }
+
+    .entry{
+      display:inline-flex;
+      align-items:center;
+      max-width:100%;
+      padding:7px 10px;
+      border-radius:14px;
+      background:var(--work);
+      border:1px solid #d5ecd9;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.2;
+      word-break:keep-all;
+    }
+
+    .holiday{
+      background:var(--holiday);
+      border-color:#ffd9d9;
+    }
+
+    .blank{
+      background:var(--blank);
+      border-color:#e9e6f7;
+      color:#8b88a1;
+      font-weight:700;
+    }
+
+    .small{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+      margin-top:4px;
+    }
+
+    .note{
+      padding:14px 18px 18px;
+      background:linear-gradient(180deg, #ffffff 0%, #fafaff 100%);
+      border-top:1px solid var(--line);
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    @media (max-width: 520px){
+      .wrap{padding:10px;}
+      tbody td{height:88px; padding:7px;}
+      .entry{font-size:12px; padding:6px 8px;}
+      .title{font-size:18px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="header">
+        <h1 class="title">강북구 스마트팜 재배단지 공공근로자 출근표</h1>
+        
+      </div>
+
+      <div class="table-wrap">
+        <table aria-label="공공근로 출근표">
+          <thead>
+            <tr>
+              <th style="width:14%">일</th>
+              <th style="width:14%">월</th>
+              <th style="width:14%">화</th>
+              <th style="width:14%">수</th>
+              <th style="width:14%">목</th>
+              <th style="width:14%">금</th>
+              <th style="width:16%">토</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sun"><div class="date"><span>2</span><span class="dayname">일</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span>3</span><span class="dayname">월</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span>4</span><span class="dayname">화</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span>5</span><span class="dayname">수</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span>6</span><span class="dayname">목</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span>7</span><span class="dayname">금</span></div><div class="entry blank"></div></td>
+              <td class="sat"><div class="date"><span>8</span><span class="dayname">토</span></div><div class="entry blank"></div></td>
+            </tr>
+            <tr>
+              <td class="sun"><div class="date"><span>9</span><span class="dayname">일</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span>10</span><span class="dayname">월</span></div><div class="entry holiday">대체휴무</div></td>
+              <td><div class="date"><span>11</span><span class="dayname">화</span></div><div class="entry">손성호</div></td>
+              <td><div class="date"><span>12</span><span class="dayname">수</span></div><div class="entry">손성호<</div></td>
+              <td><div class="date"><span>13</span><span class="dayname">목</span></div><div class="entry">황원택</div></td>
+              <td><div class="date"><span>14</span><span class="dayname">금</span></div><div class="entry">남제국</div></td>
+              <td class="sat"><div class="date"><span>15</span><span class="dayname">토</span></div><div class="entry blank">광복절</div></td>
+            </tr>
+            <tr>
+              <td class="sun"><div class="date"><span>16</span><span class="dayname">일</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span>17</span><span class="dayname">월</span></div><div class="entry blank">대체공휴일</div></td>
+              <td><div class="date"><span>18</span><span class="dayname">화</span></div><div class="entry">정병륜</div></td>
+              <td><div class="date"><span>19</span><span class="dayname">수</span></div><div class="entry">정병륜</div></td>
+              <td><div class="date"><span>20</span><span class="dayname">목</span></div><div class="entry">황원택</div></td>
+              <td><div class="date"><span>21</span><span class="dayname">금</span></div><div class="entry">황원택</div></td>
+              <td class="sat"><div class="date"><span>22</span><span class="dayname">토</span></div><div class="entry blank"></div></td>
+            </tr>
+            <tr>
+              <td class="sun"><div class="date"><span>23</span><span class="dayname">일</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span>24</span><span class="dayname">월</span></div><div class="entry">손성호</div></td>
+              <td><div class="date"><span>25</span><span class="dayname">화</span></div><div class="entry">남제국</div></td>
+              <td><div class="date"><span>26</span><span class="dayname">수</span></div><div class="entry">남제국</div></td>
+              <td><div class="date"><span>27</span><span class="dayname">목</span></div><div class="entry">손성호</div></td>
+              <td><div class="date"><span>28</span><span class="dayname">금</span></div><div class="entry">정병륜</div></td>
+              <td class="sat"><div class="date"><span>29</span><span class="dayname">토</span></div><div class="entry blank"></div></td>
+            </tr>
+            <tr>
+              <td class="sun"><div class="date"><span>30</span><span class="dayname">일</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span>31</span><span class="dayname">월</span></div><div class="entry blank"></div></td>
+              <td><div class="date"><span></span><span class="dayname"></span></div></td>
+              <td><div class="date"><span></span><span class="dayname"></span></div></td>
+              <td><div class="date"><span></span><span class="dayname"></span></div></td>
+              <td><div class="date"><span></span><span class="dayname"></span></div></td>
+              <td class="sat"><div class="date"><span></span><span class="dayname"></span></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        ※28일까지 스마트팜센터 출근이며 재배단지 상황에 따라 변경될 수 있습니다.
+      </div>
+    </div>
+  </div>
+</body>
+</html>
