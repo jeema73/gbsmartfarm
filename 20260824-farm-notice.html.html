@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>스마트팜 재배단지 향후 일정 및 근무 계획 보고</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #fdf6ff 0%, #e8f4ff 50%, #f0fff4 100%);
+      min-height: 100vh;
+      color: #2d3748;
+      line-height: 1.6;
+      padding: 24px 16px;
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* 헤더 */
+    .header {
+      background: linear-gradient(135deg, #a8e6cf 0%, #b8d8f8 100%);
+      border-radius: 20px;
+      padding: 32px 28px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(168, 230, 207, 0.25);
+      margin-bottom: 28px;
+    }
+
+    .header .badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.7);
+      color: #4a7c6a;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #2c5f4a;
+      line-height: 1.4;
+    }
+
+    .header .desc {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #4a6b5c;
+    }
+
+    /* 카드 공통 */
+    .card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 28px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(180, 200, 220, 0.15);
+      border: 1px solid rgba(220, 230, 240, 0.6);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 2px dashed #e8eef5;
+    }
+
+    .card-title .icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .icon-schedule { background: #ffe4ec; }
+    .icon-work { background: #e0f4ff; }
+
+    /* 일정 타임라인 */
+    .timeline {
+      list-style: none;
+      position: relative;
+      padding-left: 14px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: linear-gradient(to bottom, #ffd6e0, #c8e6ff, #d4f5d4);
+      border-radius: 2px;
+    }
+
+    .timeline li {
+      position: relative;
+      padding: 14px 14px 14px 22px;
+      margin-bottom: 10px;
+      background: #fafcff;
+      border-radius: 12px;
+      border-left: 3px solid #ffd6e0;
+      transition: transform 0.2s ease;
+    }
+
+    .timeline li:nth-child(2) { border-left-color: #ffd6a8; }
+    .timeline li:nth-child(3) { border-left-color: #c8e6ff; }
+    .timeline li:nth-child(4) { border-left-color: #c8f0d4; }
+
+    .timeline li::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      background: #fff;
+      border: 3px solid #ffb3c6;
+      border-radius: 50%;
+    }
+
+    .timeline li:nth-child(2)::before { border-color: #ffb870; }
+    .timeline li:nth-child(3)::before { border-color: #7fb8e8; }
+    .timeline li:nth-child(4)::before { border-color: #7fd4a0; }
+
+    .timeline li:hover { transform: translateX(4px); }
+
+    .date {
+      display: inline-block;
+      font-weight: 700;
+      font-size: 16px;
+      color: #4a7c6a;
+      margin-right: 8px;
+    }
+
+    .day {
+      display: inline-block;
+      background: #e8f4ff;
+      color: #4a6b8c;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-right: 10px;
+    }
+
+    .event {
+      display: block;
+      margin-top: 6px;
+      font-size: 14.5px;
+      color: #3a4a5c;
+    }
+
+    .event .note {
+      display: block;
+      margin-top: 4px;
+      font-size: 13px;
+      color: #7a8a9c;
+    }
+
+    /* 근무 계획 */
+    .work-list {
+      list-style: none;
+    }
+
+    .work-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      background: linear-gradient(135deg, #f8fbff 0%, #f0f8ff 100%);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      border: 1px solid #e8f0f8;
+    }
+
+    .work-list li:last-child { margin-bottom: 0; }
+
+    .work-list .emoji {
+      font-size: 20px;
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      background: #fff;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(180, 200, 220, 0.2);
+    }
+
+    .work-list .content {
+      flex: 1;
+    }
+
+    .work-list .label {
+      font-weight: 700;
+      font-size: 14.5px;
+      color: #2d5a7c;
+      margin-bottom: 4px;
+    }
+
+    .work-list .text {
+      font-size: 14px;
+      color: #4a5a6c;
+    }
+
+    .highlight {
+      display: inline-block;
+      background: #fff3d6;
+      color: #8a6a2a;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    /* 푸터 */
+    .footer {
+      text-align: center;
+      padding: 24px 16px;
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 4px 20px rgba(180, 200, 220, 0.15);
+      border: 1px solid rgba(220, 230, 240, 0.6);
+    }
+
+    .footer .thanks {
+      font-size: 15px;
+      color: #4a7c6a;
+      font-weight: 500;
+    }
+
+    .footer .thanks::before {
+      content: '🌱 ';
+    }
+
+    /* 모바일 반응형 */
+    @media (max-width: 480px) {
+      body { padding: 16px 12px; }
+      .header { padding: 24px 20px; border-radius: 16px; }
+      .header h1 { font-size: 18px; }
+      .header .desc { font-size: 13px; }
+      .card { padding: 22px 18px; border-radius: 14px; }
+      .card-title { font-size: 16px; }
+      .card-title .icon { width: 32px; height: 32px; font-size: 16px; }
+      .timeline li { padding: 12px 10px 12px 18px; font-size: 13.5px; }
+      .date { font-size: 13px; }
+      .event { font-size: 13.5px; }
+      .work-list li { padding: 12px; gap: 10px; }
+      .work-list .label { font-size: 13.5px; }
+      .work-list .text { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- 헤더 -->
+    <div class="header">
+      <span class="badge">
+      <h1>스마트팜 재배단지<br/>향후 일정 및 근무 계획 보고</h1></span>
+      <p class="desc">스마트팜 재배단지 향후 주요 일정 및 공공근로자 운영 계획</p>
+    </div>
+
+    <!-- 주요 일정 -->
+    <div class="card">
+      <h2 class="card-title">
+        <span class="icon icon-schedule">📅</span>
+        재배단지 주요 일정
+      </h2>
+      <ul class="timeline">
+        <li>
+          <span class="date">9월 8일</span><span class="day">화</span>
+          <span class="event">코코피트 입고 확정</span>
+        </li>
+        <li>
+          <span class="date">9월 14일</span><span class="day">월</span>
+          <span class="event">
+            딸기 모종 택배 발송 요청 예정
+            <span class="note">※ 9월 16일 정식 일정에 차질이 없도록 조치 예정</span>
+          </span>
+        </li>
+        <li>
+          <span class="date">9월 16일</span><span class="day">수</span>
+          <span class="event">딸기 모종 정식 진행(사이버대학지원)</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 공공근로자 운영 계획 -->
+    <div class="card">
+      <h2 class="card-title">
+        <span class="icon icon-work">👥</span>
+        공공근로자 운영 계획
+      </h2>
+      <ul class="work-list">
+        <li>
+          <span class="emoji">🔄</span>
+          <div class="content">
+            <div class="label">이동근무 연장</div>
+            <div class="text">
+              재배단지향후 일정을 반영하여 스마트팜센터 이동근무 <span class="highlight">2주 연장</span><br/>
+              기간: 8/31 ~ 9/11
+            </div>
+          </div>
+        </li>
+        <li>
+          <span class="emoji">👫</span>
+          <div class="content">
+            <div class="label">근무 방식</div>
+            <div class="text">
+              효율성을 고려하여 <span class="highlight">2인 1조</span> 구성<br/>
+              총 4명 · 2명씩 순환(재배단지,센터) 출근 예정
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 푸터 -->
+    <div class="footer">
+      <p class="thanks">차질 없이 준비하여 정식 일정에 맞추도록 하겠습니다. <br>감사합니다.</br></p>
+    </div>
+
+  </div>
+</body>
+</html>
