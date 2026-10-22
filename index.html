@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>초과근무 관리</title>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+:root {
+  --bg:#f5f5f3;--white:#fff;--primary:#2563eb;--primary-dark:#1d4ed8;
+  --success:#16a34a;--warning:#d97706;--danger:#dc2626;
+  --text:#1a1a1a;--muted:#6b7280;--border:#e5e7eb;--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI','Apple SD Gothic Neo',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* AUTH */
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.auth-card{background:var(--white);border-radius:var(--radius);padding:2rem;width:100%;max-width:400px;border:1px solid var(--border)}
+.auth-tabs{display:flex;margin-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.auth-tab{flex:1;padding:10px;text-align:center;font-size:15px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent}
+.auth-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+/* FORM */
+.fg{margin-bottom:1rem}
+.fg label{display:block;font-size:13px;font-weight:500;color:#444;margin-bottom:5px}
+.fg input,.fg select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:15px;color:var(--text);background:var(--white);outline:none}
+.fg input:focus,.fg select:focus{border-color:var(--primary)}
+.fg input[readonly]{background:#f9fafb;color:var(--muted)}
+.row2{display:flex;gap:10px}
+.row2 .fg{flex:1}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:10px 18px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-block{width:100%;padding:12px;font-size:15px}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{background:var(--bg)}
+.btn-danger-outline{background:transparent;border:1px solid #fca5a5;color:var(--danger)}
+.btn-danger-outline:hover{background:#fef2f2}
+.btn-icon{background:transparent;border:none;cursor:pointer;padding:6px;border-radius:6px;font-size:18px;line-height:1}
+.btn-icon:hover{background:var(--bg)}
+
+/* APP LAYOUT */
+.app{display:none;min-height:100vh;flex-direction:column}
+.app.on{display:flex}
+
+.topnav{background:var(--white);border-bottom:1px solid var(--border);padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:100}
+.nav-brand{font-size:16px;font-weight:700}
+.nav-links{display:flex;gap:2px}
+.nav-link{padding:6px 12px;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:none;transition:.15s}
+.nav-link:hover{background:var(--bg);color:var(--text)}
+.nav-link.on{background:#eff6ff;color:var(--primary)}
+.nav-user{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+
+.content{flex:1;padding:1.5rem 1rem 90px;max-width:900px;width:100%;margin:0 auto}
+
+.botnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:6px 0 calc(env(safe-area-inset-bottom,0px) + 6px);z-index:100}
+.botnav-inner{display:flex}
+.botnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;cursor:pointer;border:none;background:none;color:var(--muted);font-size:10px;font-weight:500}
+.botnav-item .ico{font-size:22px;line-height:1.2}
+.botnav-item.on{color:var(--primary)}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1rem}
+.card{background:var(--white);border-radius:var(--radius);padding:16px;border:1px solid var(--border)}
+.card-lbl{font-size:12px;color:var(--muted);margin-bottom:5px}
+.card-val{font-size:20px;font-weight:700}
+.card-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.c-blue{color:var(--primary)}.c-green{color:var(--success)}.c-orange{color:var(--warning)}.c-red{color:var(--danger)}.c-gray{color:#9ca3af}
+
+.prog-bg{background:#f0f0f0;border-radius:6px;height:6px;margin-top:8px;overflow:hidden}
+.prog-bar{height:100%;border-radius:6px;transition:width .4s,background .4s}
+
+/* SECTIONS */
+.section{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:1.25rem;margin-bottom:1rem}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.sec-title{font-size:15px;font-weight:600}
+
+/* MONTH NAV */
+.month-nav{display:flex;align-items:center;gap:6px}
+.month-lbl{font-size:16px;font-weight:700;min-width:96px;text-align:center}
+.month-btn{background:var(--white);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.month-btn:hover{background:var(--bg)}
+
+/* CALENDAR */
+.cal-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-dow{text-align:center;font-size:11px;color:var(--muted);font-weight:600;padding:2px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:1.25rem}
+.cal-cell{background:var(--bg);border-radius:8px;min-height:74px;padding:4px 3px;cursor:pointer;display:flex;flex-direction:column;gap:2px;border:1.5px solid transparent;transition:.1s}
+.cal-cell:hover{filter:brightness(.96)}
+.cal-cell.empty{background:transparent;cursor:default;visibility:hidden}
+.cal-cell.dayoff{background:#fffbeb}
+.cal-cell.today{border-color:var(--primary)}
+.cal-date{font-size:11px;font-weight:700;color:#888}
+.cal-cell.dayoff .cal-date{color:#b45309}
+.cal-sun .cal-date{color:#dc2626}
+.cal-tag{font-size:9.5px;font-weight:700;border-radius:5px;padding:1px 3px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-tag-ot{background:#dbeafe;color:#1d4ed8}
+.cal-tag-ded{background:#fef3c7;color:#92400e}
+.cal-note{font-size:9px;color:#9ca3af;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:1px}
+@media(max-width:480px){
+  .cal-cell{min-height:58px;padding:3px 2px}
+  .cal-tag{font-size:8.5px}
+}
+
+/* RECORD ITEMS */
+.rec-item{display:flex;align-items:center;padding:11px 12px;background:var(--bg);border-radius:10px;gap:10px;cursor:pointer;transition:background .15s;margin-bottom:7px}
+.rec-item:hover{filter:brightness(.97)}
+.rec-item.dayoff{background:#fffbeb}
+.rec-item.carryover{background:#f0fdf4}
+.rec-date{font-weight:600;font-size:14px;min-width:80px}
+.rec-times{font-size:13px;color:var(--muted);flex:1}
+.rec-ot{font-weight:700;font-size:14px;min-width:68px;text-align:right}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:12px;font-size:11px;font-weight:600;margin-top:2px}
+.b-blue{background:#dbeafe;color:#1d4ed8}
+.b-green{background:#dcfce7;color:#15803d}
+.b-orange{background:#fef3c7;color:#92400e}
+.b-red{background:#fee2e2;color:#991b1b}
+.b-gray{background:#f3f4f6;color:#6b7280}
+.b-purple{background:#ede9fe;color:#5b21b6}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal-overlay.mid{align-items:center}
+.modal{background:var(--white);border-radius:16px 16px 0 0;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal.mid{border-radius:16px;margin:1rem}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
+.modal-actions{display:flex;gap:8px;margin-top:1.5rem}
+.modal-actions .btn{flex:1}
+
+/* ALERTS & NOTICES */
+.alert{border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:1rem}
+.a-warn{background:#fef3c7;border:1px solid #fcd34d;color:#92400e}
+.a-info{background:#dbeafe;border:1px solid #93c5fd;color:#1e40af}
+.a-err{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}
+.a-green{background:#f0fdf4;border:1px solid #86efac;color:#15803d}
+
+.notice{font-size:12px;color:#777;background:#f9f9f7;border-radius:8px;padding:10px 14px;margin-bottom:1rem;line-height:1.7;border-left:3px solid #ddd}
+
+/* CHECKBOX ROW */
+.check-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;margin-top:8px}
+.check-row label{font-size:13px;font-weight:600;color:#92400e;cursor:pointer}
+.check-row input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--warning)}
+
+/* SETTINGS */
+.s-group{margin-bottom:1.25rem}
+.s-group-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem}
+.s-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.s-row:last-child{border-bottom:none}
+.s-lbl{font-size:14px;font-weight:500}
+.s-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.s-ctrl{display:flex;align-items:center;gap:6px}
+.s-input{padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;text-align:center;background:var(--white);color:var(--text);outline:none}
+
+/* DAY CHECKBOXES */
+.day-checks{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0}
+.day-chk{width:42px;height:42px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;background:var(--white);color:var(--muted);user-select:none}
+.day-chk.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* DEDUCTION ITEMS */
+.ded-item{display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg);border-radius:10px;margin-bottom:7px}
+
+/* EMPTY */
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
+.empty-ico{font-size:36px;margin-bottom:.5rem}
+.empty-txt{font-size:14px}
+
+/* SPINNER */
+.spin{display:flex;align-items:center;justify-content:center;padding:2.5rem}
+.spin::after{content:'';width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .botnav{display:block}
+  .topnav .nav-links{display:none}
+  .content{padding:1rem .75rem 90px}
+}
+@media(min-width:769px){
+  .cards{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+  .modal-overlay{align-items:center}
+  .modal{border-radius:16px;margin:1rem}
+}
+
+/* GUEST MODE */
+.guest-mode .admin-only { display: none !important; }
+.guest-badge { background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+.calc-formula-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: var(--radius); padding: 12px 14px; font-size: 13px; line-height: 1.6; color: #166534; margin-bottom: 1rem; }
+.calc-formula-box b { color: #14532d; }
+</style>
+</head>
+<body>
+
+<!-- ===== AUTH ===== -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="font-size:38px;margin-bottom:6px">🌾⏱️</div>
+      <div style="font-size:20px;font-weight:700">강북구청 스마트팜</div>
+      <div style="font-size:14px;color:var(--primary);font-weight:600;margin-top:2px">초과근무 및 대체휴무 관리</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">투명한 정산 및 구청 확인용 시스템</div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab on" id="tabLogin" onclick="switchAuthTab('login')">👤 매니저 로그인</button>
+      <button class="auth-tab" id="tabGuest" onclick="switchAuthTab('guest')">🔍 구청 담당자 확인</button>
+    </div>
+    <div id="authErr" class="alert a-err" style="display:none"></div>
+
+    <!-- 매니저 로그인 폼 -->
+    <div id="fLogin">
+      <div class="fg"><label>이메일</label><input type="email" id="lEmail" placeholder="관리자 이메일 주소"></div>
+      <div class="fg"><label>비밀번호</label><input type="password" id="lPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin(false)"></div>
+      <div style="margin-bottom:12px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer">
+          <input type="checkbox" id="chkGuestLogin" style="width:16px;height:16px;accent-color:var(--primary)">
+          읽기 전용(열람 전용 모드)으로 접속하기
+        </label>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="doLogin()">로그인</button>
+    </div>
+
+    <!-- 구청 담당자 간편 확인 폼 -->
+    <div id="fGuest" style="display:none">
+      <div class="notice" style="margin-bottom:1rem">
+        구청 담당자 확인용 화면입니다.<br>
+        매니저님이 공유해 드린 <b>접속 암호(PIN)</b> 또는 <b>계정</b>으로 입장하시면 실시간 근무 현황과 대체휴무 내역 확인 및 <b>엑셀 다운로드</b>가 가능합니다.
+      </div>
+      <div class="fg"><label>담당자 확인 암호 (PIN)</label><input type="password" id="gPin" placeholder="4자리 이상 암호 입력" onkeydown="if(event.key==='Enter')doGuestPinLogin()"></div>
+      <button class="btn btn-primary btn-block" style="background:#16a34a" onclick="doGuestPinLogin()">🔍 담당자 모드로 입장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="mainApp" class="app">
+  <nav class="topnav">
+    <div class="nav-brand" style="display:flex;align-items:center;gap:8px">
+      <span>⏱ 초과근무 관리</span>
+      <span class="guest-badge" id="guestBadge" style="display:none">👁️ 구청 담당자 열람 모드</span>
+    </div>
+    <div class="nav-links">
+      <button class="nav-link on" data-p="dash" onclick="go('dash')">📊 대시보드</button>
+      <button class="nav-link" data-p="recs" onclick="go('recs')">📋 근무기록</button>
+      <button class="nav-link" data-p="deds" onclick="go('deds')">📤 차감관리</button>
+      <button class="nav-link" data-p="dl" onclick="go('dl')">⬇️ 다운로드</button>
+      <button class="nav-link admin-only" data-p="cfg" onclick="go('cfg')">⚙️ 설정</button>
+    </div>
+    <div class="nav-user">
+      <span id="userName" style="font-weight:500"></span>
+      <button class="btn btn-sm btn-outline" onclick="doLogout()">로그아웃</button>
+    </div>
+  </nav>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="pageDash">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+        <div class="month-nav">
+          <button class="month-btn" onclick="chMonth(-1)">◀</button>
+          <div class="month-lbl" id="mLblD"></div>
+          <button class="month-btn" onclick="chMonth(1)">▶</button>
+        </div>
+        <button class="btn btn-sm btn-primary admin-only" onclick="openAddRec()">+ 근무 추가</button>
+      </div>
+
+      <div id="carryoverBox" class="alert a-green" style="display:none;margin-bottom:1rem"></div>
+
+      <!-- 5대 핵심 정산 지표 카드 -->
+      <div class="cards">
+        <div class="card">
+          <div class="card-lbl">↩️ 전월 이월 잔여</div>
+          <div class="card-val c-gray" id="dPrev">-</div>
+          <div class="card-sub" id="dPrevSub">이전달 대체휴무 잔여</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">📅 이달 초과근무</div>
+          <div class="card-val c-blue" id="dOT">-</div>
+          <div class="card-sub" id="dOTSub"></div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">💰 수당 인정/처리</div>
+          <div class="card-val c-green" id="dPay">-</div>
+          <div class="prog-bg"><div class="prog-bar" id="dPayBar" style="width:0%"></div></div>
+          <div class="card-sub" id="dPaySub" style="margin-top:6px"></div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">📤 대체휴무/조퇴 사용</div>
+          <div class="card-val c-red" id="dDed">-</div>
+          <div class="card-sub" id="dDedSub"></div>
+        </div>
+        <div class="card" style="background:#eff6ff;border:1.5px solid #93c5fd">
+          <div class="card-lbl" style="color:#1d4ed8;font-weight:700">✅ 최종 잔여 대체휴무</div>
+          <div class="card-val c-blue" id="dRem" style="font-size:22px">-</div>
+          <div class="card-sub" id="dRemSub" style="color:#2563eb;font-weight:600">익월로 이월되는 시간</div>
+        </div>
+      </div>
+
+      <!-- 계산 공식 풀이 배너 -->
+      <div id="dCalcFormula" class="calc-formula-box" style="display:none"></div>
+
+      <div id="dAlert" class="alert a-warn" style="display:none"></div>
+
+
+      <div class="section">
+        <div class="sec-hdr">
+          <div class="sec-title">📅 이달 캘린더</div>
+          <span style="font-size:11px;color:var(--muted)">날짜를 누르면 기록을 추가/수정할 수 있어요</span>
+        </div>
+        <div id="dCalDows" class="cal-dows"></div>
+        <div id="dCal" class="cal-grid"><div class="spin"></div></div>
+      </div>
+
+      <div class="section">
+        <div class="sec-hdr">
+          <div class="sec-title">이달 근무 기록</div>
+          <span id="dRecCount" style="font-size:13px;color:var(--muted)"></span>
+        </div>
+        <div id="dRecList"><div class="spin"></div></div>
+      </div>
+    </div>
+
+    <!-- RECORDS -->
+    <div id="pageRecs" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+        <div class="month-nav">
+          <button class="month-btn" onclick="chMonth(-1)">◀</button>
+          <div class="month-lbl" id="mLblR"></div>
+          <button class="month-btn" onclick="chMonth(1)">▶</button>
+        </div>
+        <button class="btn btn-sm btn-primary admin-only" onclick="openAddRec()">+ 근무 추가</button>
+      </div>
+      <div class="section">
+        <div id="recList"><div class="spin"></div></div>
+      </div>
+    </div>
+
+    <!-- DEDUCTIONS -->
+    <div id="pageDeds" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+        <div class="month-nav">
+          <button class="month-btn" onclick="chMonth(-1)">◀</button>
+          <div class="month-lbl" id="mLblDD"></div>
+          <button class="month-btn" onclick="chMonth(1)">▶</button>
+        </div>
+        <button class="btn btn-sm btn-primary admin-only" onclick="openAddDed()">+ 차감 추가</button>
+      </div>
+      <div class="cards" style="grid-template-columns:repeat(2,1fr)!important">
+        <div class="card"><div class="card-lbl">🏖 이번 달 최종 잔여</div><div class="card-val c-blue" id="ddRem">-</div></div>
+        <div class="card"><div class="card-lbl">📤 이번 달 차감 사용</div><div class="card-val c-orange" id="ddAcc">-</div></div>
+      </div>
+      <div class="section">
+        <div class="sec-title" style="margin-bottom:1rem">차감 내역</div>
+        <div id="dedList"><div class="spin"></div></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="pageCfg" style="display:none">
+      <div class="section">
+        <div class="sec-title" style="margin-bottom:1.25rem">⚙️ 근무 기준 설정</div>
+        <div class="s-group">
+          <div class="s-row">
+            <div><div class="s-lbl">기본 출근 시간</div><div class="s-sub">근무 추가 시 기본값</div></div>
+            <input type="time" id="cfgStart" class="s-input" style="width:110px" value="09:00">
+          </div>
+
+          <div class="s-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+            <div><div class="s-lbl">정기 휴무 요일</div><div class="s-sub">해당 요일 근무 = 전체 시간 초과근무</div></div>
+            <div class="day-checks" id="dayCfg">
+              <div class="day-chk" data-d="0">일</div>
+              <div class="day-chk" data-d="1">월</div>
+              <div class="day-chk" data-d="2">화</div>
+              <div class="day-chk" data-d="3">수</div>
+              <div class="day-chk" data-d="4">목</div>
+              <div class="day-chk" data-d="5">금</div>
+              <div class="day-chk" data-d="6">토</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-group">
+          <div class="s-group-title">근무표 제출일 설정</div>
+          <div class="notice">
+            제출일 이후 날짜의 초과근무는 <b>다음 달로 이월</b>됩니다.<br>
+            예) 20일 제출 → 21일~말일 초과근무는 다음 달에 합산
+          </div>
+          <div class="s-row">
+            <div><div class="s-lbl" id="cfgSubLbl">이번 달 제출일</div><div class="s-sub" id="cfgSubSub"></div></div>
+            <div class="s-ctrl">
+              <input type="number" id="cfgSub" class="s-input" min="1" max="31" value="20" style="width:70px">
+              <span style="font-size:14px;color:var(--muted)">일</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-group">
+          <div class="s-group-title">월별 수당 인정 한도 (구청 통보 기준)</div>
+          <div class="notice">
+            수당으로 인정되는 시간은 매월 구청 예산 및 사정에 따라 달라질 수 있습니다.<br>
+            👉 <b>월 정산 시</b> 구청 담당자가 알려준 <b>실제 수당 인정 시간</b>을 여기에 입력해 주세요.<br>
+            (입력하지 않으면 기본 10시간으로 자동 계산됩니다.)<br>
+            ✨ <b>핵심</b>: 이번 달 일한 시간이 부족해도 <b>이전 누적분에서 충당되어 수당 한도를 채울 수 있습니다.</b>
+          </div>
+          <div class="s-row">
+            <div class="month-nav">
+              <button class="month-btn" onclick="chMonth(-1)">◀</button>
+              <div class="month-lbl" id="cfgPayMLbl" style="font-size:14px"></div>
+              <button class="month-btn" onclick="chMonth(1)">▶</button>
+            </div>
+          </div>
+          <div class="s-row">
+            <div><div class="s-lbl">해당 달 인정 시간</div><div class="s-sub" id="cfgPaySub"></div></div>
+            <div class="s-ctrl">
+              <input type="number" id="cfgPayHr" class="s-input" min="0" max="200" step="0.5" placeholder="10" style="width:80px">
+              <span style="font-size:14px;color:var(--muted)">시간</span>
+            </div>
+          </div>
+          <button class="btn btn-outline" style="width:100%;margin-top:8px;font-size:13px" onclick="resetCfgPay()">↺ 기본값(10시간)으로 되돌리기</button>
+        </div>
+
+        <div class="s-group">
+          <div class="s-group-title">🔍 구청 담당자 열람용 설정</div>
+          <div class="notice">
+            구청 담당자가 들어와서 볼 수 있는 <b>확인용 접속 암호(PIN)</b>와 <b>전용 바로가기 링크</b>입니다.<br>
+            담당자는 열람 모드로 접속하여 근무/차감 내역 확인 및 엑셀 다운로드만 가능합니다.
+          </div>
+          <div class="s-row">
+            <div><div class="s-lbl">담당자 접속 암호 (PIN)</div><div class="s-sub">담당자에게 알려줄 간단한 암호</div></div>
+            <div class="s-ctrl">
+              <input type="text" id="cfgGuestPin" class="s-input" placeholder="1023" style="width:120px">
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <button class="btn btn-outline" style="width:100%;font-size:13px" onclick="copyGuestLink()">📋 담당자 전용 바로가기 링크 복사</button>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center">이 링크를 카톡이나 메일로 보내주시면 담당자가 바로 입장할 수 있습니다.</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" onclick="saveCfg()">💾 설정 저장</button>
+      </div>
+
+      <div class="section">
+        <div class="s-group-title">계정</div>
+        <div class="s-row">
+          <div class="s-lbl">로그인 이메일</div>
+          <div style="font-size:13px;color:var(--muted)" id="cfgEmail"></div>
+        </div>
+        <div class="s-row">
+          <div class="s-lbl">이름</div>
+          <div style="font-size:13px;color:var(--muted)" id="cfgName"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:1rem;flex-wrap:wrap">
+          <button class="btn btn-outline" style="flex:1" onclick="openPwModal()">🔑 비밀번호 변경</button>
+          <button class="btn btn-outline" style="flex:1" onclick="doLogout()">로그아웃</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- DOWNLOAD -->
+    <div id="pageDl" style="display:none">
+      <div class="section">
+        <div class="sec-title" style="margin-bottom:1.25rem">⬇️ 엑셀 다운로드</div>
+
+        <div class="s-group">
+          <div class="s-group-title">다운로드 범위</div>
+          <div style="display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
+            <button class="btn" id="dlRangeMonth" onclick="setDlRange('month')" style="flex:1;min-width:120px;background:var(--primary);color:#fff">📅 월별</button>
+            <button class="btn btn-outline" id="dlRangeYear" onclick="setDlRange('year')" style="flex:1;min-width:120px">📆 연도별</button>
+          </div>
+          <div id="dlMonthPicker">
+            <div class="row2">
+              <div class="fg"><label>연도</label><select id="dlYear" class="s-input" style="width:100%" onchange="updateDlMonthOptions()"></select></div>
+              <div class="fg"><label>월</label><select id="dlMonth" class="s-input" style="width:100%"></select></div>
+            </div>
+          </div>
+          <div id="dlYearPicker" style="display:none">
+            <div class="fg"><label>연도</label><select id="dlYearOnly" class="s-input" style="width:100%"></select></div>
+          </div>
+        </div>
+
+        <div class="s-group" style="margin-top:1rem">
+          <div class="s-group-title">다운로드 항목</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 0">
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="checkbox" id="dlChkRec" checked style="width:17px;height:17px;accent-color:var(--primary)"> 📋 근무 기록</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="checkbox" id="dlChkDed" checked style="width:17px;height:17px;accent-color:var(--primary)"> 📤 차감 내역</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="checkbox" id="dlChkSum" checked style="width:17px;height:17px;accent-color:var(--primary)"> 📊 월별 요약</label>
+          </div>
+        </div>
+
+        <div id="dlPreview" class="alert a-info" style="margin:1rem 0"></div>
+        <button class="btn btn-primary btn-block" style="font-size:15px;padding:14px" onclick="doDownload()">⬇️ 엑셀 파일 다운로드</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="botnav">
+    <div class="botnav-inner">
+      <button class="botnav-item on" data-p="dash" onclick="go('dash')"><span class="ico">📊</span><span>대시보드</span></button>
+      <button class="botnav-item" data-p="recs" onclick="go('recs')"><span class="ico">📋</span><span>근무기록</span></button>
+      <button class="botnav-item" data-p="deds" onclick="go('deds')"><span class="ico">📤</span><span>차감관리</span></button>
+      <button class="botnav-item" data-p="dl" onclick="go('dl')"><span class="ico">⬇️</span><span>다운로드</span></button>
+      <button class="botnav-item admin-only" data-p="cfg" onclick="go('cfg')"><span class="ico">⚙️</span><span>설정</span></button>
+    </div>
+  </nav>
+</div>
+
+<!-- ===== RECORD MODAL ===== -->
+<div id="mRec" class="modal-overlay" style="display:none" onclick="closeMod('mRec',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title"><span id="mRecTitle">근무 기록 추가</span><button class="btn-icon" onclick="closeMod('mRec')">✕</button></div>
+    <input type="hidden" id="mRecId">
+    <div class="fg"><label>날짜</label><input type="date" id="mRecDate" onchange="onRecDate()"></div>
+    <div class="row2">
+      <div class="fg"><label>출근 시간</label><input type="time" id="mRecS" oninput="previewOT()"></div>
+      <div class="fg"><label>퇴근 시간</label><input type="time" id="mRecE" oninput="previewOT()"></div>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="mRecOff" onchange="previewOT()">
+      <label for="mRecOff" id="mRecOffLbl">🔴 휴무일 근무 (전체 시간이 초과근무)</label>
+    </div>
+    <div class="fg" style="margin-top:10px"><label>초과근무 (자동계산)</label><input type="text" id="mRecPrev" readonly></div>
+    <div id="mRecLunchRow" style="display:none;margin-top:6px">
+      <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#15803d">
+        <input type="checkbox" id="mRecLunch" onchange="document.getElementById('mRecLunchRow').dataset.userSet='1';previewOT()" style="width:17px;height:17px;accent-color:#16a34a">
+        🍽 점심시간 1시간 제외
+        <span style="font-weight:400;color:#6b7280">(체크하면 1시간 빠집니다)</span>
+      </label>
+    </div>
+    <div id="mRecCarry" class="alert a-info" style="display:none">📅 근무표 제출일 이후 날짜 → <b>다음 달로 이월</b>됩니다.</div>
+    <div class="fg"><label>메모 (선택)</label><input type="text" id="mRecNote" placeholder="예: 야근, 행사 지원 등"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger-outline admin-only" id="mRecDelBtn" style="display:none" onclick="doDelRec()">삭제</button>
+      <button class="btn btn-outline" onclick="closeMod('mRec')">닫기</button>
+      <button class="btn btn-primary admin-only" onclick="saveRec()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DEDUCTION MODAL ===== -->
+<div id="mDed" class="modal-overlay" style="display:none" onclick="closeMod('mDed',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title"><span id="mDedTitle">차감 추가</span><button class="btn-icon" onclick="closeMod('mDed')">✕</button></div>
+    <input type="hidden" id="mDedId">
+    <div class="fg"><label>날짜</label><input type="date" id="mDedDate"></div>
+    <div class="fg"><label>유형</label>
+      <select id="mDedType" onchange="onDedType()">
+        <option value="대체휴무">대체휴무 (8시간)</option>
+        <option value="반차">반차 (4시간)</option>
+        <option value="조퇴">조퇴 (직접 입력)</option>
+      </select>
+    </div>
+    <div class="fg" id="mDedHrGrp" style="display:none"><label>차감 시간 (시간 단위)</label><input type="number" id="mDedHr" min="0.5" max="8" step="0.5" value="1"></div>
+    <div class="fg"><label>메모 (선택)</label><input type="text" id="mDedNote" placeholder="예: 병원, 개인 용무 등"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger-outline admin-only" id="mDedDelBtn" style="display:none" onclick="doDelDed()">삭제</button>
+      <button class="btn btn-outline" onclick="closeMod('mDed')">닫기</button>
+      <button class="btn btn-primary admin-only" onclick="saveDed()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== FIREBASE =====
+const firebaseConfig = {
+  apiKey: "AIzaSyAgx-j8sl21Hg6-2e-x6QPvjNzirKlzeYw",
+  authDomain: "overtime-manager-f9895.firebaseapp.com",
+  projectId: "overtime-manager-f9895",
+  storageBucket: "overtime-manager-f9895.firebasestorage.app",
+  messagingSenderId: "285039527173",
+  appId: "1:285039527173:web:5f6f4ed10579493990236c"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ===== STATE =====
+let uid = null;
+let isGuest = false;
+let cfg = { workStart:'09:00', lunchMin:60, daysOff:[0,1], subDates:{}, payLimits:{}, guestPin:'1023' };
+let recs = [], deds = [];
+const _now=new Date(); let vy=_now.getFullYear(), vm=_now.getMonth(), curPage='dash';
+const DN = ['일','월','화','수','목','금','토'];
+const OT_LIMIT = 600; // 10h in mins
+
+// URL 파라미터 확인 (?guest=1, ?guest_key=... 등)
+const urlParams = new URLSearchParams(window.location.search);
+const guestKeyParam = urlParams.get('guest_key');
+
+if(urlParams.get('guest')==='1' || urlParams.get('mode')==='guest' || guestKeyParam){
+  isGuest = true;
+  sessionStorage.setItem('isGuestMode', '1');
+} else if(sessionStorage.getItem('isGuestMode')==='1'){
+  isGuest = true;
+}
+
+// ===== AUTH =====
+auth.onAuthStateChanged(u => {
+  if (u) {
+    uid = u.uid;
+    localStorage.setItem('cached_manager_uid', u.uid);
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').classList.add('on');
+    document.getElementById('userName').textContent = isGuest ? '구청 담당자 (열람 모드)' : (u.displayName || u.email);
+    document.getElementById('cfgEmail').textContent = u.email;
+    document.getElementById('cfgName').textContent = u.displayName || '-';
+    applyGuestModeUI();
+    const now = new Date(); vy = now.getFullYear(); vm = now.getMonth();
+    loadAll();
+  } else {
+    // URL에 guest_key가 전달된 경우 자동 로그인 시도
+    if (guestKeyParam) {
+      tryAutoGuestKeyLogin(guestKeyParam);
+      return;
+    }
+    uid = null;
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('mainApp').classList.remove('on');
+  }
+});
+
+// 전용 링크(guest_key)를 통한 자동 게스트 로그인
+async function tryAutoGuestKeyLogin(key) {
+  try {
+    const decoded = decodeURIComponent(escape(atob(key)));
+    const [e, p] = decoded.split(':::');
+    if (e && p) {
+      isGuest = true;
+      sessionStorage.setItem('isGuestMode', '1');
+      await auth.signInWithEmailAndPassword(e, p);
+      return;
+    }
+  } catch(err) {
+    console.error('Guest link login error:', err);
+  }
+  showAuthErr('담당자 전용 링크 정보가 올바르지 않습니다. 매니저님께 새 링크를 요청해 주세요.');
+}
+
+function applyGuestModeUI() {
+  document.body.classList.toggle('guest-mode', isGuest);
+  const badge = document.getElementById('guestBadge');
+  if(badge) badge.style.display = isGuest ? 'inline-flex' : 'none';
+  if(isGuest && curPage === 'cfg') {
+    go('dash');
+  }
+}
+
+function switchAuthTab(t) {
+  document.getElementById('tabLogin').className = 'auth-tab' + (t==='login'?' on':'');
+  document.getElementById('tabGuest').className = 'auth-tab' + (t==='guest'?' on':'');
+  document.getElementById('fLogin').style.display = t==='login'?'block':'none';
+  document.getElementById('fGuest').style.display = t==='guest'?'block':'none';
+  document.getElementById('authErr').style.display = 'none';
+}
+
+async function doLogin() {
+  const e = document.getElementById('lEmail').value.trim();
+  const p = document.getElementById('lPw').value;
+  const wantGuest = document.getElementById('chkGuestLogin').checked;
+  if (!e||!p){showAuthErr('이메일과 비밀번호를 입력해 주세요.');return;}
+  try {
+    isGuest = wantGuest;
+    sessionStorage.setItem('isGuestMode', wantGuest ? '1' : '0');
+    
+    // 매니저 로그인 시 게스트 접속용 브릿지 정보 저장 (담당자가 PIN으로 접속할 수 있도록 지원)
+    try {
+      localStorage.setItem('overwork_bridge_e', btoa(unescape(encodeURIComponent(e))));
+      localStorage.setItem('overwork_bridge_p', btoa(unescape(encodeURIComponent(p))));
+    } catch(err){}
+
+    await auth.signInWithEmailAndPassword(e,p);
+  }
+  catch(err){showAuthErr(authErrMsg(err.code));}
+}
+
+async function doGuestPinLogin() {
+  const pin = document.getElementById('gPin').value.trim();
+  if(!pin) {
+    showAuthErr('담당자 확인 암호(PIN)를 입력해 주세요.');
+    return;
+  }
+  const storedPin = localStorage.getItem('overwork_guest_pin');
+  const expectedPin = storedPin ? storedPin.trim() : (cfg && cfg.guestPin ? String(cfg.guestPin).trim() : '1023');
+  if(pin !== expectedPin) {
+    showAuthErr('담당자 확인 암호가 올바르지 않습니다. 매니저님께 확인해 주세요.');
+    return;
+  }
+
+  isGuest = true;
+  sessionStorage.setItem('isGuestMode', '1');
+
+  // 1. 이미 Firebase 세션이 복원되어 있는 경우 즉시 진입
+  if(auth.currentUser) {
+    uid = auth.currentUser.uid;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').classList.add('on');
+    document.getElementById('userName').textContent = '구청 담당자 (열람 모드)';
+    applyGuestModeUI();
+    loadAll();
+    return;
+  }
+
+  // 2. 브라우저에 저장된 브릿지 계정 정보로 백그라운드 자동 인증
+  const bridgeE = localStorage.getItem('overwork_bridge_e');
+  const bridgeP = localStorage.getItem('overwork_bridge_p');
+  if(bridgeE && bridgeP) {
+    try {
+      const e = decodeURIComponent(escape(atob(bridgeE)));
+      const p = decodeURIComponent(escape(atob(bridgeP)));
+      await auth.signInWithEmailAndPassword(e, p);
+      return; // auth.onAuthStateChanged 에서 자동으로 화면 전환됨
+    } catch(err) {
+      console.error('Bridge auth failed:', err);
+    }
+  }
+
+  // 3. 브릿지 정보가 없는 경우 안내
+  showAuthErr('이 기기에서는 관리자(매니저) 최초 접속 기록이 없습니다. 매니저님이 공유해 드린 [담당자 전용 바로가기 링크]로 접속해 주세요.');
+}
+
+async function doLogout(){
+  isGuest = false;
+  uid = null;
+  sessionStorage.removeItem('isGuestMode');
+  document.body.classList.remove('guest-mode');
+
+  // UI 즉시 로그인 화면으로 확실하게 전환
+  const app = document.getElementById('mainApp');
+  const authSc = document.getElementById('authScreen');
+  if (app) app.classList.remove('on');
+  if (authSc) authSc.style.display = 'flex';
+  
+  const lPw = document.getElementById('lPw');
+  if (lPw) lPw.value = '';
+  const gPin = document.getElementById('gPin');
+  if (gPin) gPin.value = '';
+  const authErr = document.getElementById('authErr');
+  if (authErr) authErr.style.display = 'none';
+
+  switchAuthTab('login');
+
+  try {
+    await auth.signOut();
+  } catch(e){}
+}
+
+function showAuthErr(m){const el=document.getElementById('authErr');el.textContent=m;el.style.display='block';}
+function authErrMsg(c){
+  return {'auth/user-not-found':'등록되지 않은 이메일입니다.','auth/wrong-password':'비밀번호가 틀렸습니다.',
+  'auth/email-already-in-use':'이미 사용 중인 이메일입니다.','auth/invalid-email':'올바른 이메일 형식이 아닙니다.',
+  'auth/weak-password':'비밀번호가 너무 약합니다.','auth/too-many-requests':'잠시 후 다시 시도해 주세요.',
+  'auth/invalid-credential':'이메일 또는 비밀번호가 올바르지 않습니다.'}[c]||'오류가 발생했습니다. 다시 시도해 주세요.';
+}
+
+// ===== DATA =====
+async function loadAll() {
+  try {
+    const s = await db.collection('users').doc(uid).collection('data').doc('settings').get();
+    if (s.exists) {
+      const d=s.data();
+      cfg = {
+        workStart: d.workStart || '09:00',
+        lunchMin: d.lunchMin ?? 60,
+        daysOff: d.daysOff || [0,1],
+        subDates: d.subDates || {},
+        payLimits: d.payLimits || {},
+        guestPin: d.guestPin || '1023'
+      };
+      if (d.guestPin) {
+        localStorage.setItem('overwork_guest_pin', String(d.guestPin).trim());
+      }
+    }
+  } catch(e){}
+  try {
+    const rs = await db.collection('users').doc(uid).collection('records').orderBy('date','desc').get();
+    recs = rs.docs.map(d=>({id:d.id,...d.data()}));
+  } catch(e){}
+  try {
+    const ds = await db.collection('users').doc(uid).collection('deductions').orderBy('date','desc').get();
+    deds = ds.docs.map(d=>({id:d.id,...d.data()}));
+  } catch(e){}
+  applyCfgUI();
+  renderPage();
+}
+
+// ===== LOGIC =====
+function pt(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function ml(m){
+  m=Math.max(0,Math.round(m));
+  const h=Math.floor(m/60),min=m%60;
+  if(h===0)return min+'분';if(min===0)return h+'시간';return h+'시간 '+min+'분';
+}
+function calcOT(s,e,off,lunchExclude){
+  const sm=pt(s),em=pt(e);
+  if(em<=sm)return 0;
+  const total=em-sm;
+  if(off){
+    const deduct = lunchExclude ? 60 : 0;
+    return Math.max(0, total - deduct);
+  } else {
+    return Math.max(0, total-(8*60+60)); // 평일: 8시간+점심1시간 고정
+  }
+}
+function getMK(){return vy+'-'+String(vm+1).padStart(2,'0');}
+function getSubDate(mk){return cfg.subDates[mk]||20;}
+// 수당 인정 한도 (월별로 다를 수 있음 — 미설정 시 기본 10시간)
+function payLimitFor(mk){
+  const v = cfg.payLimits && cfg.payLimits[mk];
+  return (v!=null && v!=='') ? v : OT_LIMIT;
+}
+function isPayLimitConfirmed(mk){
+  const v = cfg.payLimits && cfg.payLimits[mk];
+  return v!=null && v!=='';
+}
+function billingMK(dateStr){
+  const[y,mo,d]=dateStr.split('-').map(Number);
+  const mk=y+'-'+String(mo).padStart(2,'0');
+  const sub=getSubDate(mk);
+  if(d<=sub)return mk;
+  return mo===12?(y+1)+'-01':y+'-'+String(mo+1).padStart(2,'0');
+}
+function recsFor(mk){return recs.filter(r=>billingMK(r.date)===mk);}
+function dedsFor(mk){return deds.filter(d=>billingMK(d.date)===mk);}
+function totalOT(mk){return recsFor(mk).reduce((s,r)=>s+(r.overtime||0),0);}
+function totalDed(mk){return dedsFor(mk).reduce((s,d)=>s+(d.mins||0),0);}
+
+// ===== SEQUENTIAL MONTHLY LEDGER (과거부터 현재까지의 연속 장부 계산) =====
+function getMonthlyLedger() {
+  const mkSet = new Set();
+  recs.forEach(r => mkSet.add(billingMK(r.date)));
+  deds.forEach(d => mkSet.add(billingMK(d.date)));
+  if (cfg.subDates) Object.keys(cfg.subDates).forEach(k => mkSet.add(k));
+  if (cfg.payLimits) Object.keys(cfg.payLimits).forEach(k => mkSet.add(k));
+  mkSet.add(getMK());
+
+  const sortedMKs = [...mkSet].filter(k => /^\d{4}-\d{2}$/.test(k)).sort();
+  if (sortedMKs.length === 0) sortedMKs.push(getMK());
+
+  const first = sortedMKs[0];
+  const last = sortedMKs[sortedMKs.length - 1];
+  const curMK = getMK();
+  const maxMK = last > curMK ? last : curMK;
+
+  const allMonths = [];
+  let [curY, curM] = first.split('-').map(Number);
+  const [endY, endM] = maxMK.split('-').map(Number);
+  while (curY < endY || (curY === endY && curM <= endM)) {
+    allMonths.push(`${curY}-${String(curM).padStart(2, '0')}`);
+    curM++;
+    if (curM > 12) { curM = 1; curY++; }
+  }
+
+  const ledger = {};
+  let prevBalance = 0; // 전월 이월 잔여 (분)
+
+  for (const mk of allMonths) {
+    const ot = totalOT(mk); // 당월 신규 초과근무 (분)
+    const available = prevBalance + ot; // 총 가용 시간 (분)
+    const limit = payLimitFor(mk); // 구청 수당 인정 한도 (분)
+    const isConfirmed = isPayLimitConfirmed(mk);
+
+    // 수당 처리: 총 가용시간 중에서 구청 수당 한도만큼 인정 (가용시간이 모자라면 가용시간만큼만)
+    const paid = Math.min(available, limit);
+
+    // 당월 대체휴무/조퇴 차감 사용
+    const ded = totalDed(mk);
+
+    // 당월 말 최종 잔여 대체휴무 (익월 이월 잔여) = (총 가용) - (수당 처리) - (대체휴무 사용)
+    const finalRem = Math.max(0, available - paid - ded);
+
+    ledger[mk] = {
+      mk,
+      prevBalance,  // 전월 이월 (A)
+      ot,           // 당월 초과 (B)
+      available,    // 총 가용 (C = A + B)
+      limit,        // 구청 수당한도 (D)
+      isConfirmed,  // 확정 여부
+      paid,         // 수당 인정/처리 (E)
+      ded,          // 대체휴무 차감 (F)
+      finalRem      // 최종 잔여 대체휴무 (G = C - E - F)
+    };
+
+    // 익월 이월
+    prevBalance = finalRem;
+  }
+
+  return ledger;
+}
+
+function cumulativeRemaining(uptoMK){
+  const ledger = getMonthlyLedger();
+  if(ledger[uptoMK]) return ledger[uptoMK].finalRem;
+  // 만약 없는 월이면 가장 가까운 이전 월의 잔여 또는 0
+  const mks = Object.keys(ledger).filter(k => k <= uptoMK).sort();
+  if(mks.length > 0) return ledger[mks[mks.length - 1]].finalRem;
+  return 0;
+}
+
+// ===== NAVIGATION =====
+function go(p){
+  if(isGuest && p === 'cfg'){
+    alert('구청 담당자 열람 모드에서는 설정 기능을 이용할 수 없습니다.');
+    return;
+  }
+  ['dash','recs','deds','dl','cfg'].forEach(x=>{
+    document.getElementById('page'+x.charAt(0).toUpperCase()+x.slice(1)).style.display=x===p?'block':'none';
+  });
+  document.querySelectorAll('[data-p]').forEach(el=>el.classList.toggle('on',el.dataset.p===p));
+  curPage=p; if(p==='dl'){initDlPickers();updateDlPreview();} renderPage();
+}
+function chMonth(d){
+  vm+=d;
+  if(vm>11){vm=0;vy++;}if(vm<0){vm=11;vy--;}
+  renderPage();
+}
+function renderPage(){
+  const lbl=vy+'년 '+(vm+1)+'월';
+  ['D','R','DD'].forEach(x=>{const el=document.getElementById('mLbl'+x);if(el)el.textContent=lbl;});
+  if(curPage==='dash')renderDash();
+  else if(curPage==='recs')renderRecs();
+  else if(curPage==='deds')renderDeds();
+  else if(curPage==='cfg')applyCfgUI();
+  else if(curPage==='dl'){initDlPickers();updateDlPreview();}
+}
+
+// ===== DASHBOARD =====
+function renderDash(){
+  const mk=getMK(), sub=getSubDate(mk);
+  const ledger = getMonthlyLedger();
+  const row = ledger[mk] || {
+    prevBalance: 0,
+    ot: 0,
+    available: 0,
+    limit: payLimitFor(mk),
+    isConfirmed: isPayLimitConfirmed(mk),
+    paid: 0,
+    ded: 0,
+    finalRem: 0
+  };
+
+  const prev = row.prevBalance;
+  const ot = row.ot;
+  const avail = row.available;
+  const limit = row.limit;
+  const pay = row.paid;
+  const ded = row.ded;
+  const rem = row.finalRem;
+
+  const pct = limit > 0 ? Math.min(100, Math.round(pay / limit * 100)) : 0;
+
+  // 이월 감지: 지난달 달력 일자이지만 이번 달 빌링으로 들어온 건
+  const prevCalMK=(vm===0?(vy-1):vy)+'-'+String(vm===0?12:vm).padStart(2,'0');
+  const carryRecs=recs.filter(r=>{
+    const[y,mo]=r.date.split('-').map(Number);
+    return y===parseInt(prevCalMK.split('-')[0])&&mo===parseInt(prevCalMK.split('-')[1])&&billingMK(r.date)===mk;
+  });
+  const carryBox=document.getElementById('carryoverBox');
+  if(carryRecs.length>0){
+    const cot=carryRecs.reduce((s,r)=>s+(r.overtime||0),0);
+    carryBox.style.display='block';
+    carryBox.textContent='↩️ 지난달 말일 근무 이월: '+ml(cot)+' ('+carryRecs.length+'건) — 이달 합산에 포함됨';
+  } else carryBox.style.display='none';
+
+  // 카드 1: 전월 이월 잔여
+  document.getElementById('dPrev').textContent = ml(prev);
+  document.getElementById('dPrevSub').textContent = prev > 0 ? '이전달에서 넘어온 잔여' : '이월 잔여 없음';
+
+  // 카드 2: 이달 초과근무
+  document.getElementById('dOT').textContent = ml(ot);
+  document.getElementById('dOTSub').textContent = `제출일(${sub}일) 기준 신규`;
+
+  // 카드 3: 수당 처리
+  document.getElementById('dPay').textContent = ml(pay);
+  document.getElementById('dPaySub').textContent = row.isConfirmed
+    ? `✅ 구청 확정: ${ml(limit)}`
+    : `⏳ 미확정 (기본 ${ml(limit)} 가정)`;
+  const bar = document.getElementById('dPayBar');
+  bar.style.width = pct + '%';
+  bar.style.background = pct >= 90 ? '#16a34a' : pct >= 50 ? '#2563eb' : '#d97706';
+
+  // 카드 4: 이달 차감 사용
+  document.getElementById('dDed').textContent = ml(ded);
+  const dedList = dedsFor(mk);
+  if(dedList.length > 0){
+    const byType={};
+    dedList.forEach(d=>{byType[d.type]=(byType[d.type]||0)+1;});
+    document.getElementById('dDedSub').textContent=Object.entries(byType).map(([t,c])=>t+' '+c+'건').join(' · ');
+  } else document.getElementById('dDedSub').textContent='이번달 사용 없음';
+
+  // 카드 5: 최종 잔여 대체휴무
+  const remEl=document.getElementById('dRem');
+  remEl.textContent=ml(rem);
+  remEl.className='card-val '+(rem>0?'c-blue':'c-gray');
+  document.getElementById('dRemSub').textContent='익월로 자동 이월';
+
+  // 계산 공식 풀이 배너
+  const formulaEl = document.getElementById('dCalcFormula');
+  formulaEl.style.display = 'block';
+  let diffExplain = '';
+  if (ot < limit && prev > 0) {
+    const fromPrev = Math.min(limit - ot, prev);
+    diffExplain = `<br><span style="color:#d97706">• 이번 달 초과근무(${ml(ot)})가 수당한도(${ml(limit)})보다 적으나, <b>이전 누적 잔여에서 ${ml(fromPrev)}을 충당</b>하여 수당 ${ml(pay)}을 꽉 채웠습니다.</span>`;
+  }
+  formulaEl.innerHTML = `
+    <b>💡 ${mk} 초과근무 정산 공식 (구청 확인 기준)</b><br>
+    • 총 가용시간: 전월 이월(<b>${ml(prev)}</b>) + 이달 신규(<b>${ml(ot)}</b>) = <b>${ml(avail)}</b><br>
+    • 수당 지급 인정: 구청 한도 <b>${ml(limit)}</b> 중 <b>${ml(pay)}</b> 처리 완료${diffExplain}<br>
+    • 대체휴무 차감: <b>${ml(ded)}</b> 사용<br>
+    ➔ <b>최종 잔여 대체휴무: ${ml(rem)}</b> (다음 달로 자동 이월)
+  `;
+
+  const alertEl=document.getElementById('dAlert');
+  if(pct>=100 && avail > pay){
+    alertEl.style.display='block';
+    alertEl.textContent='ℹ️ 이번 달 구청 수당 인정 한도('+ml(limit)+')가 모두 소진되었으며, 남은 시간('+ml(rem)+')은 대체휴무로 적립되었습니다.';
+  } else if(pct>=80){
+    alertEl.style.display='block';
+    alertEl.textContent='⚠️ 이번 달 수당 처리 시간이 '+pct+'%입니다. (한도 '+ml(limit)+')';
+  } else {
+    alertEl.style.display='none';
+  }
+
+  const rs=recsFor(mk).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('dRecCount').textContent=rs.length+'건';
+  renderRecItems('dRecList',rs,mk);
+  renderCalendar();
+}
+
+// ===== CALENDAR =====
+function renderCalendar(){
+  const dowsEl=document.getElementById('dCalDows');
+  dowsEl.innerHTML=DN.map((d,i)=>`<div class="cal-dow" style="${i===0?'color:#dc2626':i===6?'color:#2563eb':''}">${d}</div>`).join('');
+
+  const calMK = vy+'-'+String(vm+1).padStart(2,'0');
+  const daysInMonth = new Date(vy, vm+1, 0).getDate();
+  const firstDow = new Date(vy, vm, 1).getDay();
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  let cells = '';
+  for(let i=0;i<firstDow;i++) cells += '<div class="cal-cell empty"></div>';
+
+  for(let day=1; day<=daysInMonth; day++){
+    const dateStr = calMK+'-'+String(day).padStart(2,'0');
+    const dow = new Date(vy,vm,day).getDay();
+    const dayRecs = recs.filter(r=>r.date===dateStr);
+    const dayDeds = deds.filter(d=>d.date===dateStr);
+    const isOff = cfg.daysOff.includes(dow) || dayRecs.some(r=>r.isDayOff);
+    const isToday = dateStr===todayStr;
+
+    let tags='';
+    const ot = dayRecs.reduce((s,r)=>s+(r.overtime||0),0);
+    if(dayRecs.length>0){
+      tags += `<div class="cal-tag cal-tag-ot">${ot>0?ml(ot):'근무'}</div>`;
+    }
+    if(dayDeds.length>0){
+      const dmin = dayDeds.reduce((s,d)=>s+(d.mins||0),0);
+      const types = [...new Set(dayDeds.map(d=>d.type))].join('/');
+      tags += `<div class="cal-tag cal-tag-ded">${types}</div>`;
+    }
+    // 메모 표시 (근무기록 메모 우선, 없으면 차감 메모)
+    const noteSrc = dayRecs.find(r=>r.note) || dayDeds.find(d=>d.note);
+    if(noteSrc && noteSrc.note){
+      tags += `<div class="cal-note" title="${noteSrc.note.replace(/"/g,'&quot;')}">${noteSrc.note}</div>`;
+    }
+
+    const cls = 'cal-cell'+(isOff?' dayoff':'')+(isToday?' today':'')+(dow===0?' cal-sun':'');
+    cells += `<div class="${cls}" onclick="onCalClick('${dateStr}')">
+      <div class="cal-date">${day}</div>
+      ${tags}
+    </div>`;
+  }
+
+  document.getElementById('dCal').innerHTML = cells;
+}
+
+function onCalClick(dateStr){
+  const r = recs.find(x=>x.date===dateStr);
+  if(r){ openEditRec(r.id); return; }
+  const d = deds.find(x=>x.date===dateStr);
+  if(d){ openEditDed(d.id); return; }
+  if(isGuest) return; // 게스트 모드에서는 새 근무 추가 불가
+  openAddRec(dateStr);
+}
+
+// ===== RECORDS =====
+function renderRecs(){
+  const mk=getMK();
+  const rs=recsFor(mk).sort((a,b)=>b.date.localeCompare(a.date));
+  renderRecItems('recList',rs,mk);
+}
+function renderRecItems(cid,rs,mk){
+  const c=document.getElementById(cid);
+  if(rs.length===0){c.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">근무 기록이 없습니다</div></div>';return;}
+  c.innerHTML=rs.map(r=>{
+    const[y,mo,d]=r.date.split('-').map(Number);
+    const dow=new Date(y,mo-1,d).getDay();
+    const calMK=y+'-'+String(mo).padStart(2,'0');
+    const isCarry=billingMK(r.date)!==calMK;
+    const cls='rec-item'+(r.isDayOff?' dayoff':isCarry?' carryover':'');
+    const typeBadge=r.isDayOff?'<span class="badge b-orange">휴무일</span>':isCarry?'<span class="badge b-green">↩ 이월</span>':'<span class="badge b-gray">평일</span>';
+    const otColor=r.overtime>0?'c-blue':'c-gray';
+    return `<div class="${cls}" onclick="openEditRec('${r.id}')">
+      <div><div class="rec-date">${r.date.substring(5)} <small style="color:#bbb;font-weight:400">(${DN[dow]})</small></div>${typeBadge}</div>
+      <div class="rec-times">${r.start} ~ ${r.end}${r.note?'<br><span style="font-size:11px;color:#ccc">'+r.note+'</span>':''}</div>
+      <div class="rec-ot ${otColor}">${r.overtime>0?ml(r.overtime):'-'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== DEDUCTIONS =====
+function renderDeds(){
+  const ledger = getMonthlyLedger();
+  const mk = getMK();
+  const row = ledger[mk] || { finalRem: 0, ded: 0 };
+  document.getElementById('ddRem').textContent = ml(row.finalRem);
+  document.getElementById('ddAcc').textContent = ml(row.ded);
+  const ds=dedsFor(mk).sort((a,b)=>b.date.localeCompare(a.date));
+  const c=document.getElementById('dedList');
+  if(ds.length===0){c.innerHTML='<div class="empty"><div class="empty-ico">📤</div><div class="empty-txt">차감 내역이 없습니다</div></div>';return;}
+  const bm={'대체휴무':'b-orange','반차':'b-blue','조퇴':'b-red'};
+  c.innerHTML=ds.map(d=>`
+    <div class="ded-item">
+      <div>
+        <div style="font-weight:600;font-size:14px">${d.date.substring(5)} <small style="color:#bbb;font-weight:400">(${DN[new Date(...d.date.split('-').map((v,i)=>i===1?+v-1:+v)).getDay()]})</small></div>
+        <span class="badge ${bm[d.type]||'b-gray'}">${d.type}</span>
+        ${d.note?'<div style="font-size:11px;color:#bbb;margin-top:2px">'+d.note+'</div>':''}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="font-weight:700;font-size:15px;color:var(--warning)">${ml(d.mins)}</div>
+        <button class="btn-icon" onclick="openEditDed('${d.id}')" title="${isGuest?'상세보기':'수정'}">${isGuest?'🔍':'✏️'}</button>
+      </div>
+    </div>`).join('');
+}
+
+// ===== RECORD MODAL =====
+function openAddRec(presetDate){
+  if(isGuest){ alert('구청 담당자 열람 모드에서는 근무를 추가할 수 없습니다.'); return; }
+  document.getElementById('mRecId').value='';
+  document.getElementById('mRecTitle').textContent='근무 기록 추가';
+  document.getElementById('mRecDelBtn').style.display='none';
+  const now=new Date();
+  document.getElementById('mRecDate').value=presetDate||now.toISOString().split('T')[0];
+  document.getElementById('mRecS').value=cfg.workStart;
+  document.getElementById('mRecE').value=cfg.workStart;
+  document.getElementById('mRecNote').value='';
+  document.getElementById('mRecLunchRow').dataset.userSet='';
+  document.getElementById('mRecLunch').checked=false;
+  onRecDate();
+  document.getElementById('mRec').style.display='flex';
+}
+function openEditRec(id){
+  const r=recs.find(x=>x.id===id);if(!r)return;
+  document.getElementById('mRecId').value=id;
+  document.getElementById('mRecTitle').textContent=isGuest ? '근무 기록 상세 (열람)' : '근무 기록 수정';
+  document.getElementById('mRecDelBtn').style.display=isGuest ? 'none' : 'inline-flex';
+  document.getElementById('mRecDate').value=r.date;
+  document.getElementById('mRecS').value=r.start;
+  document.getElementById('mRecE').value=r.end;
+  document.getElementById('mRecOff').checked=r.isDayOff||false;
+  document.getElementById('mRecNote').value=r.note||'';
+  document.getElementById('mRecLunch').checked=r.lunchExclude||false;
+  if(r.lunchExclude) document.getElementById('mRecLunchRow').dataset.userSet='1';
+  previewOT(); checkCarry();
+  document.getElementById('mRec').style.display='flex';
+}
+function onRecDate(){
+  const date=document.getElementById('mRecDate').value;
+  if(!date)return;
+  const[y,mo,d]=date.split('-').map(Number);
+  const dow=new Date(y,mo-1,d).getDay();
+  const isOff=cfg.daysOff.includes(dow);
+  document.getElementById('mRecOff').checked=isOff;
+  document.getElementById('mRecOffLbl').textContent=isOff?`🔴 휴무일 근무 — ${DN[dow]}요일 (자동 감지)`:`⬜ 휴무일 근무 — 체크 시 전체 시간이 초과근무`;
+  checkCarry(); previewOT();
+}
+function checkCarry(){
+  const date=document.getElementById('mRecDate').value;
+  if(!date)return;
+  const[y,mo,d]=date.split('-').map(Number);
+  const mk=y+'-'+String(mo).padStart(2,'0');
+  document.getElementById('mRecCarry').style.display=d>getSubDate(mk)?'block':'none';
+}
+function previewOT(){
+  const s=document.getElementById('mRecS').value, e=document.getElementById('mRecE').value;
+  const off=document.getElementById('mRecOff').checked;
+  // 점심 체크박스 표시/자동체크
+  const lunchRow=document.getElementById('mRecLunchRow');
+  if(off && s && e && pt(e)>pt(s)){
+    lunchRow.style.display='block';
+    const total=pt(e)-pt(s);
+    // 5시간 이상이면 자동 체크 (사용자가 이미 체크/해제했으면 유지)
+    if(total>=5*60 && !lunchRow.dataset.userSet) document.getElementById('mRecLunch').checked=true;
+    if(total<5*60  && !lunchRow.dataset.userSet) document.getElementById('mRecLunch').checked=false;
+  } else {
+    lunchRow.style.display='none';
+    lunchRow.dataset.userSet='';
+    document.getElementById('mRecLunch').checked=false;
+  }
+  const lunch=off && document.getElementById('mRecLunch').checked;
+  if(s&&e&&pt(e)>pt(s)){
+    const ot=calcOT(s,e,off,lunch);
+    let desc = ot>0 ? ml(ot) : '초과근무 없음';
+    if(off) desc += lunch ? ' (점심 1시간 제외)' : ' (점심 미제외)';
+    else desc += ot>0 ? ' 초과' : '';
+    document.getElementById('mRecPrev').value=desc;
+  } else document.getElementById('mRecPrev').value='';
+}
+async function saveRec(){
+  const date=document.getElementById('mRecDate').value;
+  const s=document.getElementById('mRecS').value;
+  const e=document.getElementById('mRecE').value;
+  const off=document.getElementById('mRecOff').checked;
+  const note=document.getElementById('mRecNote').value.trim();
+  if(!date||!s||!e){alert('날짜와 출퇴근 시간을 입력해 주세요.');return;}
+  if(pt(e)<=pt(s)){alert('퇴근 시간이 출근 시간보다 빠릅니다.');return;}
+  const lunchExclude=off&&document.getElementById('mRecLunch').checked;
+  const overtime=calcOT(s,e,off,lunchExclude);
+  const data={date,start:s,end:e,isDayOff:off,lunchExclude,overtime,note};
+  const editId=document.getElementById('mRecId').value;
+  if(isGuest){ alert('구청 담당자 열람 모드에서는 저장할 수 없습니다.'); return; }
+  try{
+    const col=db.collection('users').doc(uid).collection('records');
+    if(editId){await col.doc(editId).update(data);const i=recs.findIndex(r=>r.id===editId);if(i>=0)recs[i]={id:editId,...data};}
+    else{const ref=await col.add(data);recs.unshift({id:ref.id,...data});}
+    closeMod('mRec'); renderPage();
+  }catch(e){alert('저장 실패: '+e.message);}
+}
+async function doDelRec(){
+  if(isGuest){ alert('구청 담당자 열람 모드에서는 삭제할 수 없습니다.'); return; }
+  if(!confirm('이 근무 기록을 삭제하시겠습니까?'))return;
+  const id=document.getElementById('mRecId').value;
+  try{
+    await db.collection('users').doc(uid).collection('records').doc(id).delete();
+    recs=recs.filter(r=>r.id!==id);
+    closeMod('mRec'); renderPage();
+  }catch(e){alert('삭제 실패: '+e.message);}
+}
+
+// ===== DEDUCTION MODAL =====
+function openAddDed(){
+  if(isGuest){ alert('구청 담당자 열람 모드에서는 차감을 추가할 수 없습니다.'); return; }
+  document.getElementById('mDedId').value='';
+  document.getElementById('mDedTitle').textContent='차감 추가';
+  document.getElementById('mDedDelBtn').style.display='none';
+  document.getElementById('mDedDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('mDedType').value='대체휴무';
+  document.getElementById('mDedHrGrp').style.display='none';
+  document.getElementById('mDedNote').value='';
+  document.getElementById('mDed').style.display='flex';
+}
+function openEditDed(id){
+  const d=deds.find(x=>x.id===id);if(!d)return;
+  document.getElementById('mDedId').value=id;
+  document.getElementById('mDedTitle').textContent=isGuest ? '차감 내역 상세 (열람)' : '차감 수정';
+  document.getElementById('mDedDelBtn').style.display=isGuest ? 'none' : 'inline-flex';
+  document.getElementById('mDedDate').value=d.date;
+  document.getElementById('mDedType').value=d.type;
+  document.getElementById('mDedNote').value=d.note||'';
+  document.getElementById('mDedHrGrp').style.display=d.type==='조퇴'?'block':'none';
+  if(d.type==='조퇴')document.getElementById('mDedHr').value=d.mins/60;
+  document.getElementById('mDed').style.display='flex';
+}
+function onDedType(){document.getElementById('mDedHrGrp').style.display=document.getElementById('mDedType').value==='조퇴'?'block':'none';}
+async function saveDed(){
+  if(isGuest){ alert('구청 담당자 열람 모드에서는 저장할 수 없습니다.'); return; }
+  const date=document.getElementById('mDedDate').value;
+  const type=document.getElementById('mDedType').value;
+  const note=document.getElementById('mDedNote').value.trim();
+  let mins=type==='대체휴무'?480:type==='반차'?240:Math.round(parseFloat(document.getElementById('mDedHr').value)*60);
+  if(!date){alert('날짜를 입력해 주세요.');return;}
+  const data={date,type,mins,note};
+  const editId=document.getElementById('mDedId').value;
+  try{
+    const col=db.collection('users').doc(uid).collection('deductions');
+    if(editId){await col.doc(editId).update(data);const i=deds.findIndex(d=>d.id===editId);if(i>=0)deds[i]={id:editId,...data};}
+    else{const ref=await col.add(data);deds.unshift({id:ref.id,...data});}
+    closeMod('mDed'); renderPage();
+  }catch(e){alert('저장 실패: '+e.message);}
+}
+async function doDelDed(){
+  if(isGuest){ alert('구청 담당자 열람 모드에서는 삭제할 수 없습니다.'); return; }
+  if(!confirm('이 차감 내역을 삭제하시겠습니까?'))return;
+  const id=document.getElementById('mDedId').value;
+  try{
+    await db.collection('users').doc(uid).collection('deductions').doc(id).delete();
+    deds=deds.filter(d=>d.id!==id);
+    closeMod('mDed'); renderPage();
+  }catch(e){alert('삭제 실패: '+e.message);}
+}
+
+// ===== SETTINGS =====
+function applyCfgUI(){
+  document.getElementById('cfgStart').value=cfg.workStart;
+  // 점심시간 1시간 고정 (설정 불필요)
+  document.querySelectorAll('.day-chk').forEach(el=>el.classList.toggle('on',cfg.daysOff.includes(parseInt(el.dataset.d))));
+  const mk=getMK(), sub=getSubDate(mk);
+  document.getElementById('cfgSub').value=sub;
+  document.getElementById('cfgSubLbl').textContent=mk+' 근무표 제출일';
+  document.getElementById('cfgSubSub').textContent=sub+'일 이후 초과근무 → 다음 달로 이월';
+
+  document.getElementById('cfgPayMLbl').textContent=mk;
+  const cur = cfg.payLimits && cfg.payLimits[mk];
+  document.getElementById('cfgPayHr').value = (cur!=null) ? (cur/60) : '';
+  document.getElementById('cfgPaySub').textContent = (cur!=null)
+    ? '✅ 구청 확정: '+ml(cur)
+    : '⏳ 미확정 — 기본 '+ml(OT_LIMIT)+' 적용 중';
+
+  const guestPinInput = document.getElementById('cfgGuestPin');
+  if(guestPinInput) guestPinInput.value = cfg.guestPin || '1023';
+}
+function resetCfgPay(){
+  document.getElementById('cfgPayHr').value='';
+  document.getElementById('cfgPaySub').textContent='⏳ 미확정 — 기본 '+ml(OT_LIMIT)+' 적용 중 (저장 시 반영)';
+}
+document.querySelectorAll('.day-chk').forEach(el=>el.addEventListener('click',()=>el.classList.toggle('on')));
+async function saveCfg(){
+  if(isGuest){ alert('구청 담당자 열람 모드에서는 설정을 변경할 수 없습니다.'); return; }
+  const ws=document.getElementById('cfgStart').value;
+  const lm=60; // 점심시간 1시간 고정
+  const dOff=[...document.querySelectorAll('.day-chk.on')].map(el=>parseInt(el.dataset.d));
+  const sub=parseInt(document.getElementById('cfgSub').value);
+  const mk=getMK();
+  const subDates={...cfg.subDates,[mk]:sub};
+
+  const payHrVal=document.getElementById('cfgPayHr').value;
+  const payLimits={...cfg.payLimits};
+  if(payHrVal===''||payHrVal===null||isNaN(parseFloat(payHrVal))){
+    delete payLimits[mk];
+  } else {
+    payLimits[mk]=Math.round(parseFloat(payHrVal)*60);
+  }
+
+  const guestPin = document.getElementById('cfgGuestPin') ? document.getElementById('cfgGuestPin').value.trim() || '1023' : '1023';
+  localStorage.setItem('overwork_guest_pin', guestPin);
+
+  cfg={workStart:ws,lunchMin:lm,daysOff:dOff,subDates,payLimits,guestPin};
+  try{
+    await db.collection('users').doc(uid).collection('data').doc('settings').set(cfg);
+    alert('✅ 설정이 저장되었습니다.');
+    applyCfgUI();
+    renderPage();
+  }catch(e){alert('저장 실패: '+e.message);}
+}
+
+function copyGuestLink() {
+  const bridgeE = localStorage.getItem('overwork_bridge_e');
+  const bridgeP = localStorage.getItem('overwork_bridge_p');
+  if (!bridgeE || !bridgeP) {
+    alert('로그인 정보가 브라우저에 저장되어 있지 않습니다. 매니저 계정으로 로그인 후 다시 시도해 주세요.');
+    return;
+  }
+  const e = decodeURIComponent(escape(atob(bridgeE)));
+  const p = decodeURIComponent(escape(atob(bridgeP)));
+  const key = btoa(unescape(encodeURIComponent(e + ':::' + p)));
+  const url = window.location.origin + window.location.pathname + '?guest_key=' + encodeURIComponent(key);
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      alert('📋 구청 담당자 전용 열람 링크가 복사되었습니다!\n담당자에게 카톡이나 이메일로 전달해 주세요.');
+    }).catch(() => {
+      prompt('아래 링크를 복사해서 담당자에게 전달해 주세요:', url);
+    });
+  } else {
+    prompt('아래 링크를 복사해서 담당자에게 전달해 주세요:', url);
+  }
+}
+
+// ===== MODAL =====
+function closeMod(id,ev){
+  if(ev&&ev.target!==document.getElementById(id))return;
+  document.getElementById(id).style.display='none';
+}
+
+
+// ===== DOWNLOAD =====
+let dlRange = 'month';
+
+function setDlRange(r) {
+  dlRange = r;
+  document.getElementById('dlMonthPicker').style.display = r==='month' ? 'block' : 'none';
+  document.getElementById('dlYearPicker').style.display  = r==='year'  ? 'block' : 'none';
+  document.getElementById('dlRangeMonth').style.cssText = r==='month'
+    ? 'flex:1;min-width:120px;background:var(--primary);color:#fff'
+    : 'flex:1;min-width:120px';
+  document.getElementById('dlRangeMonth').className = r==='month' ? 'btn btn-primary' : 'btn btn-outline';
+  document.getElementById('dlRangeYear').className  = r==='year'  ? 'btn btn-primary' : 'btn btn-outline';
+  updateDlPreview();
+}
+
+function initDlPickers() {
+  const years = [...new Set([
+    ...recs.map(r => r.date.split('-')[0]),
+    ...deds.map(d => d.date.split('-')[0]),
+    String(new Date().getFullYear())
+  ])].sort((a,b)=>b-a);
+
+  const yearSel = document.getElementById('dlYear');
+  const yearOnly = document.getElementById('dlYearOnly');
+  yearSel.innerHTML = years.map(y=>`<option value="${y}">${y}년</option>`).join('');
+  yearOnly.innerHTML = years.map(y=>`<option value="${y}">${y}년</option>`).join('');
+
+  // default to current year/month
+  yearSel.value = String(vy);
+  yearOnly.value = String(vy);
+  updateDlMonthOptions();
+}
+
+function updateDlMonthOptions() {
+  const y = document.getElementById('dlYear').value;
+  const months = [...new Set([
+    ...recs.filter(r=>r.date.startsWith(y)).map(r=>r.date.split('-')[1]),
+    ...deds.filter(d=>d.date.startsWith(y)).map(d=>d.date.split('-')[1])
+  ])].sort();
+  if(months.length === 0) months.push(String(vm+1).padStart(2,'0'));
+  const sel = document.getElementById('dlMonth');
+  sel.innerHTML = months.map(m=>`<option value="${m}">${parseInt(m)}월</option>`).join('');
+  // default to current month if available
+  const cur = String(vm+1).padStart(2,'0');
+  if(months.includes(cur)) sel.value = cur;
+  updateDlPreview();
+}
+
+function getDlMKs() {
+  if(dlRange === 'month') {
+    const y = document.getElementById('dlYear').value;
+    const m = document.getElementById('dlMonth').value;
+    return [y+'-'+m];
+  } else {
+    const y = document.getElementById('dlYearOnly').value;
+    return Array.from({length:12}, (_,i) => y+'-'+String(i+1).padStart(2,'0'));
+  }
+}
+// 빌링(이월 포함) 기준 — 제출일 이후 날짜는 다음달로 포함됨
+function getDlRecs() {
+  const mks = getDlMKs();
+  return recs.filter(r => mks.includes(billingMK(r.date)));
+}
+function getDlDeds() {
+  const mks = getDlMKs();
+  return deds.filter(d => mks.includes(billingMK(d.date)));
+}
+// 특정 레코드가 "지난달 발생 → 이번달로 이월"된 것인지 판별
+function isCarryRec(r) {
+  return billingMK(r.date) !== r.date.substring(0,7);
+}
+
+function updateDlPreview() {
+  const rr = getDlRecs();
+  const r = rr.length, d = getDlDeds().length;
+  const carryCount = rr.filter(isCarryRec).length;
+  let txt = `📋 근무기록 ${r}건  |  📤 차감내역 ${d}건 이 포함됩니다.`;
+  if(carryCount>0) txt += `  (↩ 이전달 이월 ${carryCount}건 포함)`;
+  document.getElementById('dlPreview').textContent = txt;
+}
+
+function minsToHM(m) {
+  m = Math.max(0, Math.round(m||0));
+  const h = Math.floor(m/60), min = m%60;
+  return h > 0 ? (min > 0 ? `${h}시간 ${min}분` : `${h}시간`) : `${min}분`;
+}
+
+function doDownload() {
+  const useRec = document.getElementById('dlChkRec').checked;
+  const useDed = document.getElementById('dlChkDed').checked;
+  const useSum = document.getElementById('dlChkSum').checked;
+  if(!useRec&&!useDed&&!useSum){alert('다운로드할 항목을 선택해 주세요.');return;}
+
+  const rangeRecs = getDlRecs().sort((a,b)=>a.date.localeCompare(b.date));
+  const rangeDeds = getDlDeds().sort((a,b)=>a.date.localeCompare(b.date));
+  const DN2=['일','월','화','수','목','금','토'];
+
+  const styles = `
+    <Style ss:ID="hdr">
+      <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+      <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#1D4ED8"/>
+      <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#93C5FD"/>
+      <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#93C5FD"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#93C5FD"/></Borders>
+      <Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="11"/>
+      <Interior ss:Color="#2563EB" ss:Pattern="Solid"/>
+    </Style>
+    <Style ss:ID="row0">
+      <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+      <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders>
+      <Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/>
+      <Font ss:Size="10"/>
+    </Style>
+    <Style ss:ID="row1">
+      <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+      <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders>
+      <Interior ss:Color="#F8FAFF" ss:Pattern="Solid"/>
+      <Font ss:Size="10"/>
+    </Style>
+    <Style ss:ID="rowOff">
+      <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#FCD34D"/>
+      <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#FCD34D"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#FCD34D"/></Borders>
+      <Interior ss:Color="#FFFBEB" ss:Pattern="Solid"/>
+      <Font ss:Size="10"/>
+    </Style>
+    <Style ss:ID="otCell">
+      <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+      <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders>
+      <Font ss:Bold="1" ss:Color="#2563EB" ss:Size="10"/>
+      <Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/>
+    </Style>
+    <Style ss:ID="sumHdr">
+      <Alignment ss:Horizontal="Center"/>
+      <Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="11"/>
+      <Interior ss:Color="#0F4C81" ss:Pattern="Solid"/>
+      <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#0F4C81"/>
+      <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#93C5FD"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#93C5FD"/></Borders>
+    </Style>
+    <Style ss:ID="sumRow">
+      <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+      <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders>
+      <Interior ss:Color="#F0F9FF" ss:Pattern="Solid"/>
+      <Font ss:Size="10"/>
+    </Style>
+    <Style ss:ID="dedHdr">
+      <Alignment ss:Horizontal="Center"/>
+      <Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="11"/>
+      <Interior ss:Color="#16A34A" ss:Pattern="Solid"/>
+      <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#16A34A"/>
+      <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#86EFAC"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#86EFAC"/></Borders>
+    </Style>
+    <Style ss:ID="rowCarry">
+      <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#86EFAC"/>
+      <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#86EFAC"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#86EFAC"/></Borders>
+      <Interior ss:Color="#F0FDF4" ss:Pattern="Solid"/>
+      <Font ss:Size="10" ss:Color="#15803D" ss:Bold="1"/>
+    </Style>
+    <Style ss:ID="noteBox">
+      <Font ss:Italic="1" ss:Size="9" ss:Color="#6B7280"/>
+    </Style>`;
+
+  function cell(val, styleID) {
+    const t = typeof val === 'number' ? 'Number' : 'String';
+    return `<Cell ss:StyleID="${styleID}"><Data ss:Type="${t}">${String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Data></Cell>`;
+  }
+  function hdr(val) { return cell(val, 'hdr'); }
+  function sumHdr(val) { return cell(val, 'sumHdr'); }
+  function dedHdr(val) { return cell(val, 'dedHdr'); }
+
+  let sheets = '';
+
+  // ── 근무기록 시트 ──
+  if(useRec) {
+    const heads = ['날짜','요일','구분','이월여부','출근','퇴근','근무시간','초과근무','점심제외','메모'];
+    const widths = [90,60,60,70,60,60,80,80,60,150];
+    let cols = widths.map(w=>`<Column ss:Width="${w}"/>`).join('');
+    let rows = `<Row ss:Height="22">${heads.map(hdr).join('')}</Row>\n`;
+
+    const carryRecs = rangeRecs.filter(isCarryRec);
+    if(dlRange==='month' && carryRecs.length>0){
+      const cot = carryRecs.reduce((s,r)=>s+(r.overtime||0),0);
+      rows += `<Row ss:Height="18"><Cell ss:MergeAcross="9" ss:StyleID="rowCarry"><Data ss:Type="String">↩ 이전달에서 이월된 근무 ${carryRecs.length}건 (합계 ${minsToHM(cot)}) — 아래 "이월" 표시된 행이 해당 내역입니다</Data></Cell></Row>\n`;
+    }
+
+    rangeRecs.forEach((r,i) => {
+      const [y,mo,d] = r.date.split('-').map(Number);
+      const dow = new Date(y,mo-1,d).getDay();
+      const isCarry = isCarryRec(r);
+      const sty = isCarry ? 'rowCarry' : (r.isDayOff ? 'rowOff' : (i%2===0?'row0':'row1'));
+      const workM = r.isDayOff
+        ? (r.lunchExclude ? Math.max(0,(r.overtime||0)) : (r.overtime||0))
+        : Math.max(0,(r.overtime||0)+(8*60));
+      rows += `<Row ss:Height="18">
+        ${cell(r.date,sty)}${cell(DN2[dow]+'요일',sty)}
+        ${cell(r.isDayOff?'휴무일':'평일',sty)}
+        ${cell(isCarry?'↩ 이월':'',sty)}
+        ${cell(r.start,sty)}${cell(r.end,sty)}
+        ${cell(minsToHM(workM),sty)}
+        ${cell(r.overtime>0?minsToHM(r.overtime||0):'-','otCell')}
+        ${cell(r.lunchExclude?'제외':'',sty)}
+        ${cell(r.note||'',sty)}
+      </Row>\n`;
+    });
+    sheets += `<Worksheet ss:Name="근무기록"><Table>${cols}${rows}</Table></Worksheet>`;
+  }
+
+  // ── 차감내역 시트 ──
+  if(useDed) {
+    const heads = ['날짜','요일','유형','차감시간','메모'];
+    const widths = [90,60,80,80,150];
+    let cols = widths.map(w=>`<Column ss:Width="${w}"/>`).join('');
+    let rows = `<Row ss:Height="22">${heads.map(dedHdr).join('')}</Row>\n`;
+    rangeDeds.forEach((d,i) => {
+      const [y,mo,dd] = d.date.split('-').map(Number);
+      const dow = new Date(y,mo-1,dd).getDay();
+      const sty = i%2===0?'row0':'row1';
+      rows += `<Row ss:Height="18">
+        ${cell(d.date,sty)}${cell(DN2[dow]+'요일',sty)}
+        ${cell(d.type,sty)}${cell(minsToHM(d.mins||0),'otCell')}
+        ${cell(d.note||'',sty)}
+      </Row>\n`;
+    });
+    sheets += `<Worksheet ss:Name="차감내역"><Table>${cols}${rows}</Table></Worksheet>`;
+  }
+
+  // ── 월별 요약 시트 (구청 제출 핵심 근거) ──
+  if(useSum) {
+    const ledger = getMonthlyLedger();
+    const targetMKs = getDlMKs().sort();
+    const heads = ['정산연월','전월 이월(A)','당월 초과(B)','총 가용시간(C=A+B)','구청 수당한도(D)','수당지급 인정(E)','대체휴무 사용(F)','최종 잔여 대체휴무(G=C-E-F)','수당 확정여부'];
+    const widths = [85,100,100,125,135,115,110,150,110];
+    let cols = widths.map(w=>`<Column ss:Width="${w}"/>`).join('');
+    let rows = `<Row ss:Height="24">${heads.map(sumHdr).join('')}</Row>\n`;
+
+    targetMKs.forEach((mk,i) => {
+      const row = ledger[mk] || {
+        prevBalance: 0, ot: 0, available: 0, limit: payLimitFor(mk), isConfirmed: isPayLimitConfirmed(mk), paid: 0, ded: 0, finalRem: 0
+      };
+      const limitTxt = minsToHM(row.limit) + (row.isConfirmed ? ' (구청확정)' : ' (기본가정)');
+      const noteTxt = row.isConfirmed ? '구청 확정' : '미확정(기본)';
+      const sty = i % 2 === 0 ? 'sumRow' : 'row0';
+
+      rows += `<Row ss:Height="20">
+        ${cell(mk, sty)}
+        ${cell(minsToHM(row.prevBalance), sty)}
+        ${cell(minsToHM(row.ot), sty)}
+        ${cell(minsToHM(row.available), sty)}
+        ${cell(limitTxt, sty)}
+        ${cell(minsToHM(row.paid), 'otCell')}
+        ${cell(minsToHM(row.ded), sty)}
+        ${cell(minsToHM(row.finalRem), 'otCell')}
+        ${cell(noteTxt, sty)}
+      </Row>\n`;
+    });
+
+    // 하단 정산 산출 공식 명시
+    rows += `<Row ss:Height="22"><Cell ss:MergeAcross="8" ss:StyleID="noteBox"><Data ss:Type="String">※ 산출공식: [전월 이월(A)] + [당월 초과근무(B)] = [총 가용시간(C)] ➔ [수당지급 인정(E)] 및 [대체휴무 사용(F)] 차감 ➔ [최종 잔여 대체휴무(G = C - E - F)] 익월 이월</Data></Cell></Row>\n`;
+
+    sheets += `<Worksheet ss:Name="월별정산요약"><Table>${cols}${rows}</Table></Worksheet>`;
+  }
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:x="urn:schemas-microsoft-com:office:excel">
+<Styles>${styles}</Styles>
+${sheets}
+</Workbook>`;
+
+  const label = dlRange==='month'
+    ? document.getElementById('dlYear').value+'_'+document.getElementById('dlMonth').value
+    : document.getElementById('dlYearOnly').value;
+  const blob = new Blob([xml], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `초과근무_${label}.xls`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+
+// ===== INIT =====
+go('dash');
+</script>
+
+<!-- ===== PASSWORD CHANGE MODAL ===== -->
+<div id="mPw" class="modal-overlay mid" style="display:none" onclick="closeMod('mPw',event)">
+  <div class="modal mid" onclick="event.stopPropagation()">
+    <div class="modal-title">🔑 비밀번호 변경<button class="btn-icon" onclick="closeMod('mPw')">✕</button></div>
+    <div id="pwErr" class="alert a-err" style="display:none;margin-bottom:1rem"></div>
+    <div id="pwOk" class="alert a-green" style="display:none;margin-bottom:1rem"></div>
+    <div class="fg"><label>현재 비밀번호</label><input type="password" id="pwCur" placeholder="현재 비밀번호 입력"></div>
+    <div class="fg"><label>새 비밀번호 (6자 이상)</label><input type="password" id="pwNew" placeholder="새 비밀번호 입력"></div>
+    <div class="fg"><label>새 비밀번호 확인</label><input type="password" id="pwNew2" placeholder="새 비밀번호 다시 입력"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeMod('mPw')">취소</button>
+      <button class="btn btn-primary" onclick="doChangePw()">변경하기</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
